@@ -17,5 +17,5 @@ Este es el frontend del sistema para gestionar torneos de cartas, proporcionando
 - **Estilos:** Bootstrap
 - **Compilación y desarrollo:** Vite
 - **Consumo de API:** Axios
-- **Gestión de estados:** React Context API (o Redux si lo utilizas)
+- **Gestión de estados:** React Context API
 - **Ruteo:** React Router
