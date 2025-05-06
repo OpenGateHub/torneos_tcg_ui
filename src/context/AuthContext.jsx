@@ -2,7 +2,6 @@ import { createContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 
-// Creamos el contexto
 const AuthContext = createContext();
 
 const AuthProvider = ({ children }) => {
@@ -10,23 +9,33 @@ const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Cuando carga la app, buscamos el token en las cookies
     const token = Cookies.get('token');
     if (token) {
-      setAuth({ token });
+      const decoded = decodeJWT(token);
+      const rol = decoded.rol;
+      setAuth({ token, rol });
     }
   }, []);
 
+  // Función para decodificar el JWT
+  const decodeJWT = (token) => {
+    const payload = token.split('.')[1]; // Obtener la parte del payload
+    const decoded = atob(payload); // Decodificar de base64
+    return JSON.parse(decoded); // Parsear el JSON decodificado
+  };
+
   const login = (token) => {
-    Cookies.set('token', token, { expires: 1 }); // 1 día de duración
-    setAuth({ token });
-    navigate('/'); // Redirigir a home tras login
+    Cookies.set('token', token, { expires: 1 });
+    const decoded = decodeJWT(token);
+    const rol = decoded.rol;
+    setAuth({ token, rol });
+    navigate('/'); // Redirige a home
   };
 
   const logout = () => {
     Cookies.remove('token');
     setAuth(null);
-    navigate('/login'); // Redirigir a login tras logout
+    navigate('/login');
   };
 
   return (

@@ -1,0 +1,283 @@
+import { useEffect, useState, useContext } from 'react';
+import { obtenerEnfrentamientos } from '../../services/torneosService';
+import { registrarResultados, generarSiguienteRonda, finalizarTorneo } from '../../services/adminService';
+import { toast } from 'react-toastify';
+import AuthContext from '../../context/AuthContext';
+
+const AdminEnfrentamientos = ({ torneoId, estado, rondasRecomendadas }) => {
+  const [rondas, setRondas] = useState([]);
+  const [resultadosLocales, setResultadosLocales] = useState({});
+  const [cargando, setCargando] = useState(true);
+  const [guardando, setGuardando] = useState(false);
+  const [mostrarBotonSiguienteRonda, setMostrarBotonSiguienteRonda] = useState(false);
+  const [mostrarBotonFinalizar, setMostrarBotonFinalizar] = useState(false);
+  const [edicionHabilitada, setEdicionHabilitada] = useState(false);
+  const { auth } = useContext(AuthContext);
+
+  useEffect(() => {
+    const cargarDatos = async () => {
+      try {
+        const dataEnfrentamientos = await obtenerEnfrentamientos(torneoId);
+
+        const rondasOrdenadas = Object.entries(dataEnfrentamientos).sort(
+          ([a], [b]) => Number(a.split(' ')[1]) - Number(b.split(' ')[1])
+        );
+
+        setRondas(rondasOrdenadas);
+
+        if (rondasOrdenadas.length >= rondasRecomendadas) {
+          setMostrarBotonFinalizar(true);
+        }
+
+        const ultimaRonda = rondasOrdenadas[rondasOrdenadas.length - 1][1];
+        const todosFinalizados = ultimaRonda.every((match) => match.finalizado);
+        setMostrarBotonSiguienteRonda(todosFinalizados);
+      } catch (error) {
+        toast.error('Error al obtener los enfrentamientos');
+        console.error(error);
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    cargarDatos();
+  }, [torneoId, rondasRecomendadas]);
+
+  const esUltimaRonda = (index) => index === rondas.length - 1;
+
+  const handleSeleccion = (matchId, ganadorId, esEmpate = false) => {
+    setResultadosLocales((prev) => ({
+      ...prev,
+      [matchId]: esEmpate ? { empate: true } : { ganadorId },
+    }));
+  };
+
+  const estaSeleccionado = (matchId, jugadorId) => {
+    return resultadosLocales[matchId]?.ganadorId === jugadorId;
+  };
+
+  const esEmpateSeleccionado = (matchId) => resultadosLocales[matchId]?.empate;
+
+  const enviarResultados = async () => {
+    const resultados = Object.entries(resultadosLocales).map(([id, resultado]) => ({
+      enfrentamientoId: parseInt(id),
+      ...resultado,
+    }));
+
+    if (resultados.length === 0) {
+      toast.warning('No se seleccionaron resultados');
+      return;
+    }
+
+    try {
+      setGuardando(true);
+      const respuesta = await registrarResultados(torneoId, { resultados }, auth);
+
+      const todosOk = respuesta.resultados.every((r) => r.estado === 'ok');
+
+      if (todosOk) {
+        toast.success('Resultados guardados correctamente');
+        setMostrarBotonSiguienteRonda(true);
+        setEdicionHabilitada(false);
+      } else {
+        toast.warning('Algunos resultados no se pudieron guardar');
+      }
+
+      const dataEnfrentamientos = await obtenerEnfrentamientos(torneoId);
+      const rondasOrdenadas = Object.entries(dataEnfrentamientos).sort(
+        ([a], [b]) => Number(a.split(' ')[1]) - Number(b.split(' ')[1])
+      );
+      setRondas(rondasOrdenadas);
+      setResultadosLocales({});
+    } catch (error) {
+      console.error(error);
+      toast.error('Error al guardar los resultados');
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const generarRonda = async () => {
+    if (rondas.length >= rondasRecomendadas) {
+      const confirmar = window.confirm(
+        `Estás a punto de generar una nueva ronda que superará las ${rondasRecomendadas} rondas recomendadas. ¿Deseas continuar?`
+      );
+      if (!confirmar) return;
+    }
+
+    try {
+      setGuardando(true);
+      await generarSiguienteRonda(torneoId, auth);
+      toast.success('Siguiente ronda generada');
+      setMostrarBotonSiguienteRonda(false);
+
+      const dataEnfrentamientos = await obtenerEnfrentamientos(torneoId);
+      const rondasOrdenadas = Object.entries(dataEnfrentamientos).sort(
+        ([a], [b]) => Number(a.split(' ')[1]) - Number(b.split(' ')[1])
+      );
+      setRondas(rondasOrdenadas);
+    } catch (error) {
+      console.error(error);
+      toast.error('Error al generar la siguiente ronda');
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const finalizarElTorneo = async () => {
+    const confirmar = window.confirm(
+      `Estás a punto de finalizar el torneo. Rondas actuales: ${rondas.length}. Rondas recomendadas: ${rondasRecomendadas}. ¿Deseas continuar?`
+    );
+    if (!confirmar) return;
+
+    try {
+      setGuardando(true);
+      const respuesta = await finalizarTorneo(torneoId, { estado: 'cerrado' }, auth);
+
+      if (respuesta.estado === 'cerrado') {
+        toast.success('Torneo finalizado correctamente');
+      } else {
+        toast.warning('No se pudo finalizar el torneo');
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Error al finalizar el torneo');
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  if (cargando) return <p>Cargando enfrentamientos...</p>;
+
+  return (
+    <div className="mt-4">
+      <h4>Gestión de Enfrentamientos</h4>
+      <div className="accordion" id="accordionAdminRondas">
+        {rondas.map(([nombreRonda, enfrentamientos], index) => {
+          const collapseId = `collapse-admin-${index}`;
+          const headingId = `heading-admin-${index}`;
+          const esUltima = esUltimaRonda(index);
+
+          return (
+            <div className="accordion-item" key={nombreRonda}>
+              <h2 className="accordion-header" id={headingId}>
+                <button
+                  className={`accordion-button ${!esUltima ? 'collapsed' : ''}`}
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target={`#${collapseId}`}
+                  aria-expanded={esUltima ? 'true' : 'false'}
+                  aria-controls={collapseId}
+                >
+                  {nombreRonda}
+                </button>
+              </h2>
+              <div
+                id={collapseId}
+                className={`accordion-collapse collapse ${esUltima ? 'show' : ''}`}
+                aria-labelledby={headingId}
+                data-bs-parent="#accordionAdminRondas"
+              >
+                <div className="accordion-body p-0">
+                  <ul className="list-group rounded-0">
+                    <li className="list-group-item d-flex justify-content-between align-items-center fw-bold bg-light">
+                      ENFRENTAMIENTO <span>SELECCIÓN</span>
+                    </li>
+                    {enfrentamientos.map((match) => (
+                      <li
+                        key={match.id}
+                        className="list-group-item d-flex justify-content-between align-items-center"
+                      >
+                        <span>
+                          {match.jugador1?.nombre} vs {match.jugador2?.nombre || 'BYE'}
+                        </span>
+
+                        {esUltima ? (
+                          match.jugador2 === null ? (
+                            <span className="text-warning fw-bold">BYE</span>
+                          ) : (
+                            <div className="btn-group">
+                              <button
+                                className={`btn btn-sm ${
+                                  estaSeleccionado(match.id, match.jugador1?.id)
+                                    ? 'btn-success'
+                                    : 'btn-outline-success'
+                                }`}
+                                onClick={() => handleSeleccion(match.id, match.jugador1?.id)}
+                                disabled={!edicionHabilitada && match.finalizado}
+                              >
+                                {match.jugador1?.nombre}
+                              </button>
+                              <button
+                                className={`btn btn-sm ${
+                                  esEmpateSeleccionado(match.id)
+                                    ? 'btn-warning'
+                                    : 'btn-outline-warning'
+                                }`}
+                                onClick={() => handleSeleccion(match.id, null, true)}
+                                disabled={!edicionHabilitada && match.finalizado}
+                              >
+                                Empate
+                              </button>
+                              <button
+                                className={`btn btn-sm ${
+                                  estaSeleccionado(match.id, match.jugador2?.id)
+                                    ? 'btn-success'
+                                    : 'btn-outline-success'
+                                }`}
+                                onClick={() => handleSeleccion(match.id, match.jugador2?.id)}
+                                disabled={!edicionHabilitada && match.finalizado}
+                              >
+                                {match.jugador2?.nombre}
+                              </button>
+                            </div>
+                          )
+                        ) : (
+                          <span>
+                            {match.finalizado
+                              ? match.jugador2 === null
+                                ? 'BYE'
+                                : match.ganador
+                                ? `Ganador: ${match.ganador.nombre}`
+                                : 'Empate'
+                              : 'Pendiente'}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {edicionHabilitada && (
+        <button className="btn btn-primary mt-3" onClick={enviarResultados} disabled={guardando}>
+          Guardar Resultados
+        </button>
+      )}
+
+      {!edicionHabilitada && mostrarBotonSiguienteRonda && (
+        <button className="btn btn-secondary mt-3 me-2" onClick={() => setEdicionHabilitada(true)}>
+          Editar Resultados
+        </button>
+      )}
+
+      {!edicionHabilitada && mostrarBotonSiguienteRonda && (
+        <button className="btn btn-success mt-3" onClick={generarRonda} disabled={guardando}>
+          Generar siguiente ronda
+        </button>
+      )}
+
+      {!edicionHabilitada && mostrarBotonFinalizar && (
+        <button className="btn btn-danger mt-3 ms-2" onClick={finalizarElTorneo} disabled={guardando}>
+          Finalizar Torneo
+        </button>
+      )}
+    </div>
+  );
+};
+
+export default AdminEnfrentamientos;
