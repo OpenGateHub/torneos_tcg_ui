@@ -2,6 +2,7 @@ import { useEffect, useState, useContext } from 'react';
 import { obtenerEnfrentamientos } from '../../services/torneosService';
 import { registrarResultados, generarSiguienteRonda, finalizarTorneo } from '../../services/adminService';
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 import AuthContext from '../../context/AuthContext';
 
 const AdminEnfrentamientos = ({ torneoId, estado, rondasRecomendadas }) => {
@@ -124,11 +125,24 @@ const AdminEnfrentamientos = ({ torneoId, estado, rondasRecomendadas }) => {
     }
   };
 
+  const confirmar = async () => {
+    const result = await Swal.fire({
+      title: '¿Finalizar torneo?',
+      html: `Rondas actuales: <strong>${rondas.length}</strong><br>Rondas recomendadas: <strong>${rondasRecomendadas}</strong>.<br><br>¿Deseas continuar?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, finalizar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+    });
+  
+    return result.isConfirmed;
+  };
+  
   const finalizarElTorneo = async () => {
-    const confirmar = window.confirm(
-      `Estás a punto de finalizar el torneo. Rondas actuales: ${rondas.length}. Rondas recomendadas: ${rondasRecomendadas}. ¿Deseas continuar?`
-    );
-    if (!confirmar) return;
+    const continuar = await confirmar();
+    if (!continuar) return;
+
 
     try {
       setGuardando(true);
