@@ -66,7 +66,7 @@ const DashboardTorneo = ({ token }) => {
           <h4 className="card-title">{torneo.torneo.nombre}</h4>
           <p className="card-text">{torneo.torneo.descripcion}</p>
           <p className="card-text">
-            <strong>Fecha de inicio:</strong> {torneo.torneo.fecha_inicio}<br />
+            <p><strong>Fecha de inicio:</strong> {new Date(torneo.torneo.fecha_inicio).toLocaleDateString('es-AR')}</p>
             <strong>Estado:</strong> {torneo.torneo.estado}
           </p>
           {torneo.torneo.estado === 'activo' && (

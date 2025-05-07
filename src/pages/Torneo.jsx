@@ -1,12 +1,15 @@
 import { useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState,useContext } from 'react';
 import { getTorneo, inscribirseEnTorneo } from '../services/torneosService'; // importa el servicio
+import AuthContext from '../context/AuthContext';
+
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Enfrentamientos from '../components/torneos/Enfrentamientos';
 
 const Torneo = () => {
   const { id } = useParams();
+  const { auth } = useContext(AuthContext);
   const [torneo, setTorneo] = useState(null);
   const [estaInscripto, setEstaInscripto] = useState(false);
   const [cargando, setCargando] = useState(true);
@@ -29,6 +32,11 @@ const Torneo = () => {
   }, [id]);
 
   const toggleInscripcion = async () => {
+    if (!auth) {
+      toast.info('Debes estar logueado para inscribirte en el torneo.');
+      return;
+    }
+  
     try {
       const data = await inscribirseEnTorneo(id);
       setEstaInscripto(prev => !prev);
@@ -38,6 +46,7 @@ const Torneo = () => {
       toast.warning('Error al modificar inscripción');
     }
   };
+  
 
   if (cargando) {
     return (
@@ -59,7 +68,7 @@ const Torneo = () => {
       <div className="card shadow p-4">
         <h2 className="mb-3 text-center">{torneo.nombre}</h2>
         <h5 className="text-muted">{torneo.descripcion}</h5>
-        <p><strong>Fecha de inicio:</strong> {new Date(torneo.fecha_inicio).toLocaleDateString()}</p>
+        <p><strong>Fecha de inicio:</strong> {new Date(torneo.fecha_inicio).toLocaleDateString('es-AR')}</p>
         <p><strong>Estado:</strong> {torneo.estado}</p>
         <p><strong>Participantes:</strong> {torneo.participantes}</p>
 

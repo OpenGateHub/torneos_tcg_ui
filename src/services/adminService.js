@@ -29,9 +29,6 @@ export const eliminarUsuario = async (id, token) => {
   return data;
 };
 
-export const crearTorneo = async ()=>{
-  //TODO
-}
 
 export const obtenerTorneos = async (token) => {
   try {

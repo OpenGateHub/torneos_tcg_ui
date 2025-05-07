@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { loginUsuario } from '../../services/authService';
 import { useNavigate } from 'react-router-dom';
+import AuthContext from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 
 const Login = () => {
+  const { login } = useContext(AuthContext); // ← Usamos la función login del contexto
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [cargando, setCargando] = useState(false);
@@ -16,17 +18,21 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setCargando(true);
-  
+
     try {
-      await loginUsuario({ email, password });
+      const { token } = await loginUsuario({ email, password });
+
+      login(token); // ← Esta es la clave: actualizamos el contexto y redirige desde ahí
       toast.success('¡Bienvenido de nuevo! 👋');
+      // No hace falta navigate('/perfil'), el contexto ya lo hace si querés, o podés mantenerlo acá si querés ir directo
       navigate('/perfil');
+
     } catch (error) {
       console.error('Error en login:', error);
 
-      const mensaje = error.response?.data?.mensaje || 'Error desconocido. Intenta nuevamente.';
-
-      if (mensaje.includes('confirmar tu cuenta')) {
+      const mensaje = error.response.data.mensaje || 'Error desconocido. Intenta nuevamente.';
+      const mensajeNormalizado = mensaje.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (mensajeNormalizado.includes('confirmar tu cuenta')) {
         toast.warning('Debes confirmar tu correo electrónico antes de iniciar sesión.');
       } else {
         toast.error('Credenciales incorrectas o cuenta inexistente.');
@@ -35,14 +41,15 @@ const Login = () => {
       setCargando(false);
     }
   };
+
   return (
     <div className="container py-5">
       <h2>Iniciar sesión</h2>
       <form onSubmit={handleSubmit} className="mt-4">
         <div className="mb-3">
           <label className="form-label">Correo electrónico</label>
-          <input 
-            type="email" 
+          <input
+            type="email"
             className="form-control"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -52,8 +59,8 @@ const Login = () => {
 
         <div className="mb-3">
           <label className="form-label">Contraseña</label>
-          <input 
-            type="password" 
+          <input
+            type="password"
             className="form-control"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -61,8 +68,8 @@ const Login = () => {
           />
         </div>
 
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           className="btn btn-primary"
           disabled={!esFormularioValido() || cargando}
         >
@@ -75,6 +82,18 @@ const Login = () => {
             'Ingresar'
           )}
         </button>
+        <div className="mt-3">
+          <p className="text-muted">
+            ¿Olvidaste tu contraseña?{' '}
+            <button
+              type="button"
+              className="btn btn-link p-0 align-baseline"
+              onClick={() => navigate('/olvide-password')}
+            >
+              Recuperar acceso
+            </button>
+          </p>
+        </div>
       </form>
     </div>
   );
