@@ -74,6 +74,24 @@ export const generarPrimeraRonda = async (id, token) => {
   return data;
 };
 
+export const chequearPrimeraRonda = async (torneoId, token) => {
+  try {
+    const res = await clienteAxios.get(`/admin/torneos/${torneoId}/enfrentamientos/1`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    console.log(res);
+    return res.data.ronda > 0; // true si hay enfrentamientos en ronda 1
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      return false; // Si no hay ronda 1, devolvemos false
+    }
+    throw error; 
+  }
+};
+
+
 export const generarSiguienteRonda = async (id, token) => {
   const { data } = await clienteAxios.post(`/admin/torneos/${id}/siguiente-ronda`, 
     {}, 

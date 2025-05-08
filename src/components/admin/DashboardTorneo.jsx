@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom'; 
 import { toast } from 'react-toastify';
-import { obtenerTorneoPorId, cerrarInscripciones, generarPrimeraRonda } from '../../services/adminService';
+import { obtenerTorneoPorId, cerrarInscripciones, generarPrimeraRonda,chequearPrimeraRonda } from '../../services/adminService';
 import AdminEnfrentamientos from '../torneos/AdminEnfrentamientos';
 import Enfrentamientos from '../torneos/Enfrentamientos';
 
@@ -9,17 +9,19 @@ const DashboardTorneo = ({ token }) => {
   const { torneoId } = useParams(); 
   const [torneo, setTorneo] = useState(null);
   const [cargando, setCargando] = useState(true);
+  const [hayPrimeraRonda, setHayPrimeraRonda] = useState(false);
 
   useEffect(() => {
     if (torneoId) {
       obtenerDatosTorneo();
+      verificarPrimeraRonda();
     }
   }, [torneoId]);
 
   const obtenerDatosTorneo = async () => {
     try {
       const datos = await obtenerTorneoPorId(torneoId, token);
-      setTorneo(datos);
+      setTorneo(datos);;
     } catch (error) {
       console.log(error);
       toast.error('Error al cargar el torneo');
@@ -39,13 +41,23 @@ const DashboardTorneo = ({ token }) => {
     }
   };
 
-  let primeraRonda= false
+  const verificarPrimeraRonda = async () => {
+    try {
+      const existe = await chequearPrimeraRonda(torneoId, token);
+      setHayPrimeraRonda(existe);
+    } catch (error) {
+      console.error('Error al verificar primera ronda:', error);
+    }
+  };
+  
+
+
   const handleGenerarPrimeraRonda = async () => {
     try {
       await generarPrimeraRonda(torneoId, token);
       toast.success('Primera ronda generada');
-      primeraRonda=true
-      obtenerDatosTorneo(); // recargar los datos
+      await obtenerDatosTorneo(); // recargar los datos
+      await verificarPrimeraRonda(); // <- ¡ESTO ES CLAVE!
     } catch (error) {
       console.log(error);
       toast.error('Error al generar la primera ronda');
@@ -55,7 +67,7 @@ const DashboardTorneo = ({ token }) => {
   if (cargando || !torneo) {
     return <div className="text-center mt-5">Cargando torneo...</div>;
   }
-
+  console.log(hayPrimeraRonda);
   return (
     <div className="container my-4">
       <h2 className="mb-4">Panel del Torneo</h2>
@@ -88,7 +100,7 @@ const DashboardTorneo = ({ token }) => {
               Participantes ({torneo.inscriptos ? torneo.inscriptos.length : 0})
             </button>
           </h2>
-          <div id="collapseInscriptos" className="accordion-collapse collapse show" aria-labelledby="headingInscriptos" data-bs-parent="#accordionInscriptos">
+          <div id="collapseInscriptos" className="accordion-collapse collapse" aria-labelledby="headingInscriptos" data-bs-parent="#accordionInscriptos">
             <div className="accordion-body">
               {torneo.inscriptos && torneo.inscriptos.length > 0 ? (
                 <ul className="list-group">
@@ -109,13 +121,18 @@ const DashboardTorneo = ({ token }) => {
 
 
       {/* Botón para generar primera ronda */}
-      {torneo.torneo.estado === 'en progreso' && primeraRonda && (
-        <div className="text-center">
-          <button className="btn btn-primary" onClick={handleGenerarPrimeraRonda}>
-            Generar Primera Ronda de Enfrentamientos
+      {torneo.torneo.estado === 'en progreso' && (
+        <div className="text-center mb-4">
+          <button
+            className="btn btn-primary"
+            onClick={handleGenerarPrimeraRonda}
+            disabled={hayPrimeraRonda}
+          >
+            {hayPrimeraRonda ? 'Primera Ronda Generada' : 'Generar Primera Ronda de Enfrentamientos'}
           </button>
         </div>
       )}
+
       {/* Componente de administración de enfrentamientos */}
         {torneo.torneo.estado === 'en progreso' && (
           <AdminEnfrentamientos torneoId={torneoId} token={token} estado={torneo.torneo.estado} rondasRecomendadas={torneo.rondasRecomendadas} />
