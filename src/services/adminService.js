@@ -81,7 +81,6 @@ export const chequearPrimeraRonda = async (torneoId, token) => {
         Authorization: `Bearer ${token}`
       }
     });
-    console.log(res);
     return res.data.ronda > 0; // true si hay enfrentamientos en ronda 1
   } catch (error) {
     if (error.response && error.response.status === 404) {

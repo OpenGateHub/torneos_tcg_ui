@@ -67,7 +67,6 @@ const DashboardTorneo = ({ token }) => {
   if (cargando || !torneo) {
     return <div className="text-center mt-5">Cargando torneo...</div>;
   }
-  console.log(hayPrimeraRonda);
   return (
     <div className="container my-4">
       <h2 className="mb-4">Panel del Torneo</h2>
@@ -135,7 +134,7 @@ const DashboardTorneo = ({ token }) => {
 
       {/* Componente de administración de enfrentamientos */}
         {torneo.torneo.estado === 'en progreso' && (
-          <AdminEnfrentamientos torneoId={torneoId} token={token} estado={torneo.torneo.estado} rondasRecomendadas={torneo.rondasRecomendadas} />
+          <AdminEnfrentamientos torneoId={torneoId} token={token} setTorneo={setTorneo} estado={torneo.torneo.estado} rondasRecomendadas={torneo.rondasRecomendadas} />
         )}
 
         {torneo.torneo.estado === 'cerrado' && (
