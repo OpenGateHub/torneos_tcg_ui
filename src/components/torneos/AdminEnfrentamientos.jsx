@@ -148,7 +148,6 @@ const AdminEnfrentamientos = ({ torneoId, rondasRecomendadas, setTorneo }) => {
     try {
       setGuardando(true);
       const respuesta = await finalizarTorneo(torneoId, { estado: 'cerrado' }, auth);
-      console.log(respuesta	);
       if (respuesta.torneo.estado === 'cerrado') {
         toast.success('Torneo finalizado correctamente');
         setTorneoState((prev) => ({ ...prev, estado: 'cerrado' })); 

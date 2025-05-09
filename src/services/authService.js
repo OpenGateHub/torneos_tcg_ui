@@ -17,6 +17,19 @@ export const loginUsuario = async (datos) => {
   return { token, usuario }; 
 };
 
+export const confirmarCuenta = async (token) => {
+  try {
+    const response = await clienteAxios.get(`/confirmar-cuenta/${token}`);
+    return response.data;
+
+  } catch (error) {
+    return {
+      ok: false,
+      mensaje: error.response?.response?.mensaje || 'Error al confirmar cuenta',
+    };
+  }
+};
+
 export const solicitarTokenRecuperacion = async (data) => {
   try {
     const response = await clienteAxios.post(`/recuperar-password`, data);

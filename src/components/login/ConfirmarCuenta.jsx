@@ -1,7 +1,8 @@
 // src/pages/ConfirmarCuenta.jsx
 import { useParams, Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+
+import { confirmarCuenta } from '../../services/authService';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -13,7 +14,7 @@ const ConfirmarCuenta = () => {
   useEffect(() => {
     const confirmar = async () => {
       try {
-        const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/usuarios/confirmar/${token}`);
+        const data = confirmarCuenta(token)
         toast.success(data.mensaje);
         setConfirmado(true);
       } catch (error) {
