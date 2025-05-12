@@ -26,7 +26,7 @@ const Home = () => {
       <h1 className="display-4 mb-3">🎴 Torneos de Cartas</h1>
       <p className="lead">¡Explorá, participá y demostrá tus habilidades!</p>
 
-      <Link to="/registro" className="btn btn-primary btn-lg mt-3 mb-5">
+      <Link to="/crear-cuenta" className="btn btn-primary btn-lg mt-3 mb-5">
         Registrarse
       </Link>
 
