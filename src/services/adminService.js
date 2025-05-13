@@ -51,6 +51,12 @@ export const obtenerTorneoPorId = async (id, token) => {
   return data;
 };
 
+// Inscribir a usuario via admin
+export const inscribirUsuario = async (id, usuarioId) => {
+  const { data } = await clienteAxios.post(`/torneos/${id}/inscribir-usuario/${usuarioId}`);
+  return data;
+}; 
+
 export const cerrarInscripciones = async (id, token) => {
   const { data } = await clienteAxios.put(`/admin/torneos/${id}`, 
     { estado: 'en progreso' }, 

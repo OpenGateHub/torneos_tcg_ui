@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import clienteAxios from '../services/axios';
+import { getTorneos } from '../services/torneosService';
 
 const Home = () => {
-  const [torneos, setTorneos] = useState([]);
+  const [torneos, setTorneos] = useState({
+    torneosActivos: [],
+    torneosFinalizados: []
+  });
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
     const fetchTorneos = async () => {
       try {
-        const { data } = await clienteAxios.get('/torneos');
+        const data  = await getTorneos();
+        console.log(data);
         setTorneos(data);
       } catch (error) {
         console.error('Error al obtener torneos:', error);
@@ -30,6 +34,8 @@ const Home = () => {
         Registrarse
       </Link>
 
+      {/* Torneos activos */}
+      <h2 className="mb-4">🔥 Proximos Torneos</h2>
       <div className="row justify-content-center">
         {cargando ? (
           <div className="col-12">
@@ -37,15 +43,15 @@ const Home = () => {
               <span className="visually-hidden">Cargando torneos...</span>
             </div>
           </div>
-        ) : torneos.length > 0 ? (
-          torneos.map((torneo) => (
+        ) : torneos?.torneosActivos?.length > 0 ? (
+          torneos?.torneosActivos?.map((torneo) => (
             <div key={torneo.id} className="col-md-4 mb-4">
               <div className="card h-100 shadow-sm border-primary">
                 <div className="card-body">
                   <h5 className="card-title">{torneo.nombre}</h5>
                   <p className="card-text text-muted">{torneo.descripcion}</p>
                   <p className="card-text">
-                    📅 Inicio: {new Date(torneo.fechaInicio).toLocaleDateString()}
+                    📅 Inicio: {new Date(torneo.fecha_inicio).toLocaleDateString()}
                   </p>
                   <Link to={`/torneos/${torneo.id}`} className="btn btn-outline-primary btn-sm">
                     Ver detalles
@@ -60,6 +66,7 @@ const Home = () => {
           </div>
         )}
       </div>
+
     </div>
   );
 };

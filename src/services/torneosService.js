@@ -29,6 +29,7 @@ export const inscribirseEnTorneo = async (id) => {
   const { data } = await clienteAxios.post(`/torneos/${id}/inscribirse`);
   return data;
 };
+ 
 
 export const obtenerEnfrentamientos = async (id) => {
   const { data } = await clienteAxios.get(`/torneos/${id}/enfrentamientos`);
