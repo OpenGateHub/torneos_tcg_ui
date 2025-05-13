@@ -69,6 +69,7 @@ const Torneo = () => {
         <h2 className="mb-3 text-center">{torneo.nombre}</h2>
         <h5 className="text-muted">{torneo.descripcion}</h5>
         <p><strong>Fecha de inicio:</strong> {new Date(torneo.fecha_inicio).toLocaleDateString('es-AR')}</p>
+        <p><strong>Tipo:</strong> {torneo.tipo}</p>
         <p><strong>Estado:</strong> {torneo.estado}</p>
         <p><strong>Participantes:</strong> {torneo.participantes}</p>
 
@@ -82,7 +83,11 @@ const Torneo = () => {
         )}
       </div>
       {['en progreso', 'cerrado'].includes(torneo.estado) && (
-        <Enfrentamientos torneoId={id} />
+        <Enfrentamientos 
+          torneoId={id} 
+          estado={torneo.estado}
+          playoff={torneo.playoff}
+        />
       )}
     </div>
   );

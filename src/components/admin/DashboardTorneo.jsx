@@ -114,6 +114,8 @@ const DashboardTorneo = ({ token }) => {
           <p className="card-text">
             <p><strong>Fecha de inicio:</strong> {new Date(torneo.torneo.fecha_inicio).toLocaleDateString('es-AR')}</p>
             <strong>Estado:</strong> {torneo.torneo.estado}
+            <p><strong>Tipo:</strong> {torneo.torneo.tipo}</p>
+            <p><strong>Playoff:</strong> {torneo.torneo.playoff}</p>
           </p>
           {torneo.torneo.estado === 'activo' && (
             <button className="btn btn-warning" onClick={handleCerrarInscripciones}>
@@ -178,7 +180,11 @@ const DashboardTorneo = ({ token }) => {
         )}
 
         {torneo.torneo.estado === 'cerrado' && (
-          <Enfrentamientos torneoId={torneoId} />
+          <Enfrentamientos 
+            torneoId={torneoId} 
+            estado={torneo.torneo.estado}
+            playoff={torneo.torneo.playoff}
+          />
         )}
       {/* Modal para agregar participante */}
       {torneo.torneo.estado === 'activo' && (

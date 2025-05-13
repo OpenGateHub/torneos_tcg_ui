@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { obtenerEnfrentamientos, obtenerRanking } from '../../services/torneosService';
 import { toast } from 'react-toastify';
 
-const Enfrentamientos = ({ torneoId, estado }) => {
+const Enfrentamientos = ({ torneoId, estado, playoff }) => {
   const [rondas, setRondas] = useState([]);
   const [ranking, setRanking] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -104,9 +104,15 @@ const Enfrentamientos = ({ torneoId, estado }) => {
       </div>
 
       <h4 className="mt-4">Ranking actual</h4>
+      {playoff > 0 && (
+        <div className="alert alert-info">
+          Top {playoff} clasifican a playoffs
+        </div>
+      )}
       <table className="table table-striped">
         <thead>
           <tr>
+            <th>#</th>
             <th>Jugador</th>
             <th>Victorias</th>
             <th>Derrotas</th>
@@ -116,9 +122,21 @@ const Enfrentamientos = ({ torneoId, estado }) => {
           </tr>
         </thead>
         <tbody>
-          {ranking.map((jugador) => (
-            <tr key={jugador.id}>
-              <td>{jugador.nombre}</td>
+          {ranking.map((jugador, index) => (
+            <tr 
+              key={jugador.id}
+              className={`
+                ${playoff > 0 && index + 1 === playoff ? 'border-bottom ' : ''}
+                ${playoff > 0 && index + 1 <= playoff ? 'border border-dark playoff-position' : ''}
+              `}
+            >
+              <td>{index + 1}</td>
+              <td>
+                {playoff > 0 && index + 1 <= playoff && (
+                  <span className="badge bg-success me-2">Playoff</span>
+                )}
+                {jugador.nombre}
+              </td>
               <td>{jugador.victorias}</td>
               <td>{jugador.derrotas}</td>
               <td>{jugador.empates}</td>
@@ -128,6 +146,15 @@ const Enfrentamientos = ({ torneoId, estado }) => {
           ))}
         </tbody>
       </table>
+
+      <style jsx="true">{`
+        .playoff-position {
+          background-color: rgba(0, 0, 0, 0.02) !important;
+        }
+        .playoff-position:hover {
+          background-color: rgba(0, 0, 0, 0.05) !important;
+        }
+      `}</style>
     </div>
   );
 };

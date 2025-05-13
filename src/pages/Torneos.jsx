@@ -31,6 +31,7 @@ const Torneos = () => {
                 <h5 className="card-title">{torneo.nombre}</h5>
                 <p className="card-text">Inicio: {new Date(torneo.fecha_inicio).toLocaleDateString()}</p>
                 <p className="card-text">Estado: {torneo.estado}</p>
+                <p className="card-text">Tipo: {torneo.tipo}</p>
                 <Link to={`/torneos/${torneo.id}`} className="btn btn-info">
                   Ver torneo
                 </Link>
@@ -48,6 +49,7 @@ const Torneos = () => {
               <div className="card-body">
                 <h5 className="card-title">{torneo.nombre}</h5>
                 <p className="card-text">Finalizó el: {new Date(torneo.fecha_fin).toLocaleDateString()}</p>
+                <p className="card-text">Tipo: {torneo.tipo}</p>
                 <Link to={`/torneos/${torneo.id}`} className="btn btn-info">
                   Ver torneo
                 </Link>
