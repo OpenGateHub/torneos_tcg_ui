@@ -112,3 +112,13 @@ export const registrarResultados = async (id, resultados, token) => {
   );
   return data;
 };
+
+// Registrar resultado individual
+export const registrarResultadoIndividual = async (torneoId, enfrentamientoId, resultado, token) => {
+  const { data } = await clienteAxios.post(
+    `/admin/torneos/${torneoId}/enfrentamientos/${enfrentamientoId}/resultado`, 
+    resultado, 
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return data;
+};

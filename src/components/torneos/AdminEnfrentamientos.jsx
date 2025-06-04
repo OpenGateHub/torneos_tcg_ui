@@ -1,6 +1,6 @@
 import { useEffect, useState, useContext } from 'react';
 import { obtenerEnfrentamientos } from '../../services/torneosService';
-import { registrarResultados, generarSiguienteRonda, finalizarTorneo } from '../../services/adminService';
+import { registrarResultados, generarSiguienteRonda, finalizarTorneo, registrarResultadoIndividual } from '../../services/adminService';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
 import AuthContext from '../../context/AuthContext';
@@ -10,7 +10,7 @@ const AdminEnfrentamientos = ({ torneoId, rondasRecomendadas, setTorneo }) => {
   const [resultadosLocales, setResultadosLocales] = useState({});
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
-  const [mostrarBotonSiguienteRonda, setMostrarBotonSiguienteRonda] = useState(false);
+  const [puedeGenerarSiguienteRonda, setPuedeGenerarSiguienteRonda] = useState(false);
   const [torneoState, setTorneoState] = useState(null);
   const { auth } = useContext(AuthContext);
 
@@ -22,12 +22,45 @@ const AdminEnfrentamientos = ({ torneoId, rondasRecomendadas, setTorneo }) => {
           ([a], [b]) => Number(a.split(' ')[1]) - Number(b.split(' ')[1])
         );
         setRondas(rondasOrdenadas);
-
-        const ultimaRonda = rondasOrdenadas[rondasOrdenadas.length - 1][1];
-        const todosFinalizados = ultimaRonda.every((match) => match.finalizado);
-        setMostrarBotonSiguienteRonda(todosFinalizados);
-
-        // Se habilita la edición si todos los enfrentamientos no están finalizados
+  
+        // 1. Extraer resultados ya guardados en el servidor desde los enfrentamientos
+        const resultadosDelServidor = {};
+        rondasOrdenadas.forEach(([nombreRonda, enfrentamientos]) => {
+          enfrentamientos.forEach(match => {
+            if (match.estado === "finalizado") {
+              if (match.ganador === null) {
+                // Si no hay ganador, asumimos que es empate
+                resultadosDelServidor[match.id] = { empate: true };
+              } else {
+                // Si hay ganador, guardamos su ID
+                resultadosDelServidor[match.id] = { ganadorId: match.ganador.id };
+              }
+            }
+          });
+        });
+  
+        // 2. Cargar resultados pendientes desde localStorage
+        const resultadosPendientes = JSON.parse(
+          localStorage.getItem(`resultados_${torneoId}`) || '{}'
+        );
+  
+        // 3. Combinar resultados del servidor con los pendientes
+        // Los pendientes tienen prioridad (por si hay cambios no sincronizados)
+        const resultadosCombinados = {
+          ...resultadosDelServidor,
+          ...resultadosPendientes
+        };
+  
+        setResultadosLocales(resultadosCombinados);
+  
+        // 4. Verificar si puede generar siguiente ronda
+        verificarSiPuedeGenerarSiguienteRonda(rondasOrdenadas, resultadosCombinados);
+  
+        // 5. Intentar sincronizar resultados pendientes si los hay
+        if (Object.keys(resultadosPendientes).length > 0) {
+          await sincronizarResultadosPendientes();
+        }
+  
       } catch (error) {
         toast.error('Error al obtener los enfrentamientos');
         console.error(error);
@@ -35,17 +68,70 @@ const AdminEnfrentamientos = ({ torneoId, rondasRecomendadas, setTorneo }) => {
         setCargando(false);
       }
     };
-
+  
     cargarDatos();
   }, [torneoId]);
 
+  // Verificar si todos los enfrentamientos de la última ronda tienen resultados
+  const verificarSiPuedeGenerarSiguienteRonda = (rondasData, resultados) => {
+    if (rondasData.length === 0) return;
+    
+    const ultimaRonda = rondasData[rondasData.length - 1][1];
+    const enfrentamientosConOponente = ultimaRonda.filter(match => match.jugador2 !== null);
+    
+    const todosConResultados = enfrentamientosConOponente.every(match => 
+      resultados[match.id] && (resultados[match.id].ganadorId || resultados[match.id].empate)
+    );
+    
+    setPuedeGenerarSiguienteRonda(todosConResultados);
+  };
+
   const esUltimaRonda = (index) => index === rondas.length - 1;
 
-  const handleSeleccion = (matchId, ganadorId, esEmpate = false) => {
-    setResultadosLocales((prev) => ({
-      ...prev,
-      [matchId]: esEmpate ? { empate: true } : { ganadorId },
-    }));
+  const handleSeleccion = async (matchId, ganadorId, esEmpate = false) => {
+    const nuevoResultado = esEmpate ? { empate: true } : { ganadorId };
+    
+    // Guardar el estado anterior para poder revertir
+    const estadoAnterior = { ...resultadosLocales };
+    
+    // Actualizar estado local optimistamente
+    const nuevosResultados = {
+      ...resultadosLocales,
+      [matchId]: nuevoResultado,
+    };
+    
+    setResultadosLocales(nuevosResultados);
+  
+    try {
+      // Intentar guardar en el servidor
+      await registrarResultadoIndividual(torneoId, matchId, nuevoResultado, auth);
+      
+      // Si se guarda correctamente, remover de localStorage pendientes
+      const resultadosPendientes = JSON.parse(localStorage.getItem(`resultados_${torneoId}`) || '{}');
+      delete resultadosPendientes[matchId];
+      
+      if (Object.keys(resultadosPendientes).length === 0) {
+        localStorage.removeItem(`resultados_${torneoId}`);
+      } else {
+        localStorage.setItem(`resultados_${torneoId}`, JSON.stringify(resultadosPendientes));
+      }
+      
+      // Verificar si puede generar siguiente ronda
+      verificarSiPuedeGenerarSiguienteRonda(rondas, nuevosResultados);
+      
+    } catch (error) {
+      console.error('Error al guardar resultado:', error);
+      
+      // Revertir al estado anterior
+      setResultadosLocales(estadoAnterior);
+      
+      // Mantener en localStorage como pendiente
+      const resultadosPendientes = JSON.parse(localStorage.getItem(`resultados_${torneoId}`) || '{}');
+      resultadosPendientes[matchId] = nuevoResultado;
+      localStorage.setItem(`resultados_${torneoId}`, JSON.stringify(resultadosPendientes));
+      
+      toast.error('Error al guardar el resultado. Se guardó localmente para reintento.');
+    }
   };
 
   const estaSeleccionado = (matchId, jugadorId) => {
@@ -54,45 +140,46 @@ const AdminEnfrentamientos = ({ torneoId, rondasRecomendadas, setTorneo }) => {
 
   const esEmpateSeleccionado = (matchId) => resultadosLocales[matchId]?.empate;
 
-  const enviarResultados = async () => {
-    const resultados = Object.entries(resultadosLocales).map(([id, resultado]) => ({
-      enfrentamientoId: parseInt(id),
-      ...resultado,
-    }));
-
-    if (resultados.length === 0) {
-      toast.warning('No se seleccionaron resultados');
-      return;
-    }
-
-    try {
-      setGuardando(true);
-      const respuesta = await registrarResultados(torneoId, { resultados }, auth);
-
-      const todosOk = respuesta.resultados.every((r) => r.estado === 'ok');
-
-      if (todosOk) {
-        toast.success('Resultados guardados correctamente');
-        setMostrarBotonSiguienteRonda(true);
-      } else {
-        toast.warning('Algunos resultados no se pudieron guardar');
+  const sincronizarResultadosPendientes = async () => {
+    const resultadosPendientes = JSON.parse(localStorage.getItem(`resultados_${torneoId}`) || '{}');
+    
+    if (Object.keys(resultadosPendientes).length === 0) return;
+    
+    const resultadosExitosos = {};
+    const resultadosFallidos = {};
+    
+    for (const [matchId, resultado] of Object.entries(resultadosPendientes)) {
+      try {
+        await registrarResultadoIndividual(torneoId, parseInt(matchId), resultado, auth);
+        resultadosExitosos[matchId] = resultado;
+      } catch (error) {
+        console.error(`Error al sincronizar resultado ${matchId}:`, error);
+        resultadosFallidos[matchId] = resultado;
       }
-
-      const dataEnfrentamientos = await obtenerEnfrentamientos(torneoId);
-      const rondasOrdenadas = Object.entries(dataEnfrentamientos).sort(
-        ([a], [b]) => Number(a.split(' ')[1]) - Number(b.split(' ')[1])
-      );
-      setRondas(rondasOrdenadas);
-      setResultadosLocales({});
-    } catch (error) {
-      console.error(error);
-      toast.error('Error al guardar los resultados');
-    } finally {
-      setGuardando(false);
+    }
+    
+    // Actualizar localStorage solo con los que fallaron
+    if (Object.keys(resultadosFallidos).length === 0) {
+      localStorage.removeItem(`resultados_${torneoId}`);
+      toast.success('Todos los resultados pendientes se sincronizaron correctamente');
+    } else {
+      localStorage.setItem(`resultados_${torneoId}`, JSON.stringify(resultadosFallidos));
+      const exitosos = Object.keys(resultadosExitosos).length;
+      const fallidos = Object.keys(resultadosFallidos).length;
+      toast.warning(`${exitosos} resultados sincronizados, ${fallidos} aún pendientes`);
     }
   };
 
-  const generarRonda = async () => {
+  const generarSiguienteRondaConGuardado = async () => {
+    // Primero verificar si estamos en la última ronda recomendada
+    const esUltimaRondaRecomendada = rondas.length >= rondasRecomendadas;
+    
+    if (esUltimaRondaRecomendada) {
+      // Si es la última ronda recomendada, finalizar torneo automáticamente
+      await finalizarTorneoAutomaticamente();
+      return;
+    }
+
     if (rondas.length >= rondasRecomendadas) {
       const confirmar = await Swal.fire({
         title: '¿Seguro quieres generar una nueva ronda?',
@@ -109,10 +196,27 @@ const AdminEnfrentamientos = ({ torneoId, rondasRecomendadas, setTorneo }) => {
   
     try {
       setGuardando(true);
+      
+      // Primero guardar resultados
+      const resultados = Object.entries(resultadosLocales).map(([id, resultado]) => ({
+        enfrentamientoId: parseInt(id),
+        ...resultado,
+      }));
+
+      if (resultados.length > 0) {
+        await registrarResultados(torneoId, { resultados }, auth);
+      }
+
+      // Luego generar siguiente ronda
       await generarSiguienteRonda(torneoId, auth);
-      toast.success('Siguiente ronda generada');
-      setMostrarBotonSiguienteRonda(false);
+      toast.success('Resultados guardados y siguiente ronda generada');
+      
+      // Limpiar localStorage y estado local
+      localStorage.removeItem(`resultados_${torneoId}`);
+      setResultadosLocales({});
+      setPuedeGenerarSiguienteRonda(false);
   
+      // Recargar datos
       const dataEnfrentamientos = await obtenerEnfrentamientos(torneoId);
       const rondasOrdenadas = Object.entries(dataEnfrentamientos).sort(
         ([a], [b]) => Number(a.split(' ')[1]) - Number(b.split(' ')[1])
@@ -120,14 +224,43 @@ const AdminEnfrentamientos = ({ torneoId, rondasRecomendadas, setTorneo }) => {
       setRondas(rondasOrdenadas);
     } catch (error) {
       console.error(error);
-      toast.error('Error al generar la siguiente ronda');
+      toast.error('Error al procesar la siguiente ronda');
     } finally {
       setGuardando(false);
     }
   };
-  
 
-  const confirmar = async () => {
+  const finalizarTorneoAutomaticamente = async () => {
+    try {
+      setGuardando(true);
+      
+      // Primero guardar resultados finales
+      const resultados = Object.entries(resultadosLocales).map(([id, resultado]) => ({
+        enfrentamientoId: parseInt(id),
+        ...resultado,
+      }));
+
+      if (resultados.length > 0) {
+        await registrarResultados(torneoId, { resultados }, auth);
+      }
+
+      // Finalizar torneo
+      const respuesta = await finalizarTorneo(torneoId, auth);
+      if (respuesta.torneo.estado === 'cerrado') {
+        toast.success('Torneo finalizado automáticamente - Rondas completadas');
+        localStorage.removeItem(`resultados_${torneoId}`);
+        setTorneo((prev) => ({ ...prev, torneo: { ...prev.torneo, estado: 'cerrado' } }));
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Error al finalizar el torneo automáticamente');
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const finalizarElTorneoManual = async () => {
     const result = await Swal.fire({
       title: '¿Finalizar torneo?',
       html: `Rondas actuales: <strong>${rondas.length}</strong><br>Rondas recomendadas: <strong>${rondasRecomendadas}</strong>.<br><br>¿Deseas continuar?`,
@@ -138,24 +271,29 @@ const AdminEnfrentamientos = ({ torneoId, rondasRecomendadas, setTorneo }) => {
       reverseButtons: true,
     });
 
-    return result.isConfirmed;
-  };
-
-  const finalizarElTorneo = async () => {
-    const continuar = await confirmar();
-    if (!continuar) return;
+    if (!result.isConfirmed) return;
 
     try {
       setGuardando(true);
-      const respuesta = await finalizarTorneo(torneoId, { estado: 'cerrado' }, auth);
+      
+      // Guardar resultados pendientes si los hay
+      const resultados = Object.entries(resultadosLocales).map(([id, resultado]) => ({
+        enfrentamientoId: parseInt(id),
+        ...resultado,
+      }));
+
+      if (resultados.length > 0) {
+        await registrarResultados(torneoId, { resultados }, auth);
+      }
+
+      const respuesta = await finalizarTorneo(torneoId, auth);
       if (respuesta.torneo.estado === 'cerrado') {
         toast.success('Torneo finalizado correctamente');
+        localStorage.removeItem(`resultados_${torneoId}`);
         setTorneoState((prev) => ({ ...prev, estado: 'cerrado' })); 
-
-        setTorneo((prev) => ({ ...prev, estado: 'cerrado' }));
+        setTorneo((prev) => ({ ...prev, torneo: { ...prev.torneo, estado: 'cerrado' } }));
         window.location.reload();
-      }
-       else {
+      } else {
         toast.warning('No se pudo finalizar el torneo');
       }
     } catch (error) {
@@ -208,7 +346,12 @@ const AdminEnfrentamientos = ({ torneoId, rondasRecomendadas, setTorneo }) => {
                         className="list-group-item d-flex justify-content-between align-items-center"
                       >
                         <span>
-                          {match.jugador1?.nombre} vs {match.jugador2?.nombre || 'BYE'}
+                          
+                          {match.jugador2 === null ? (
+                            match.jugador1?.nombre
+                          ) : (
+                            `${match.jugador1?.nombre} vs ${match.jugador2?.nombre}`
+                          )}
                         </span>
 
                         {esUltima ? (
@@ -269,16 +412,24 @@ const AdminEnfrentamientos = ({ torneoId, rondasRecomendadas, setTorneo }) => {
         })}
       </div>
 
-      <button className="btn btn-primary mt-3" onClick={enviarResultados} disabled={guardando}>
-        Guardar Resultados
+      
+      <button 
+        className="btn btn-primary mt-3 me-2" 
+        onClick={generarSiguienteRondaConGuardado} 
+        disabled={guardando || !puedeGenerarSiguienteRonda}
+      >
+        {guardando ? (
+          <>
+            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            {rondas.length >= rondasRecomendadas ? 'Finalizando Torneo...' : 'Generando Siguiente Ronda...'}
+          </>
+        ) : (
+          rondas.length >= rondasRecomendadas ? 'Finalizar Torneo' : 'Siguiente Ronda'
+        )}
       </button>
 
-      <button className="btn btn-secondary mt-3 me-2" onClick={generarRonda} disabled={guardando || !mostrarBotonSiguienteRonda}>
-        Generar siguiente ronda
-      </button>
-
-      <button className="btn btn-danger mt-3 ms-2" onClick={finalizarElTorneo} disabled={guardando}>
-        Finalizar Torneo
+      <button className="btn btn-danger mt-3 ms-2" onClick={finalizarElTorneoManual} disabled={guardando}>
+        Finalizar Torneo (Manual)
       </button>
     </div>
   );

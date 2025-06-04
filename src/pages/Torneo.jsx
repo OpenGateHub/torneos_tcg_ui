@@ -13,6 +13,8 @@ const Torneo = () => {
   const [torneo, setTorneo] = useState(null);
   const [estaInscripto, setEstaInscripto] = useState(false);
   const [cargando, setCargando] = useState(true);
+  const [procesandoInscripcion, setProcesandoInscripcion] = useState(false);
+
 
   useEffect(() => {
     const fetchTorneo = async () => {
@@ -36,26 +38,35 @@ const Torneo = () => {
       toast.info('Debes estar logueado para inscribirte en el torneo.');
       return;
     }
+
+    setProcesandoInscripcion(true);
+
   
     try {
-      const data = await inscribirseEnTorneo(id);
+      const promesaReal = inscribirseEnTorneo(id);
+      const delayMinimo = new Promise(resolve => setTimeout(resolve, 2500));
+
+      const [data] = await Promise.all([promesaReal, delayMinimo]);
+
       setEstaInscripto(prev => !prev);
       toast.success(data.mensaje);
     } catch (error) {
       console.log(error);
       toast.warning('Error al modificar inscripción');
+    } finally {
+      setProcesandoInscripcion(false);
     }
   };
   
 
   if (cargando) {
     return (
-      <div className="container text-center mt-5">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Cargando...</span>
+      <div className="d-flex justify-content-center align-items-center vh-100 flex-column">
+        <div className="spinner-border text-primary" style={{ width: '4rem', height: '4rem' }} role="status">
+          <span className="visually-hidden">Cargando torneo...</span>
         </div>
-        <p className="mt-3">Cargando torneo...</p>
-      </div>
+        <p className="mt-3 fs-4 text-muted">Cargando torneo...</p>
+    </div>
     );
   }
 
@@ -75,11 +86,21 @@ const Torneo = () => {
 
         {torneo.estado === 'activo' && (
           <button
-            onClick={toggleInscripcion}
-            className={`btn ${estaInscripto ? 'btn-danger' : 'btn-success'} mt-3`}
-          >
-            {estaInscripto ? 'Anular inscripción' : 'Inscribirme'}
-          </button>
+          onClick={toggleInscripcion}
+          className={`btn ${estaInscripto ? 'btn-danger' : 'btn-success'} mt-3`}
+          disabled={procesandoInscripcion}
+        >
+          {procesandoInscripcion ? (
+            <>
+              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              {estaInscripto ? 'Anulando tu inscripción...' : 'Inscribiéndote al torneo...'}
+            </>
+          ) : (
+            estaInscripto 
+              ? 'Ya estás inscripto, para cancelar tu inscripción haz clic aquí'
+              : 'Inscribirme'
+          )}
+        </button>
         )}
       </div>
       {['en progreso', 'cerrado'].includes(torneo.estado) && (

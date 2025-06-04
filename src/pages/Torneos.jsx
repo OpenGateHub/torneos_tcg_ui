@@ -48,7 +48,6 @@ const Torneos = () => {
             <div className="card bg-light">
               <div className="card-body">
                 <h5 className="card-title">{torneo.nombre}</h5>
-                <p className="card-text">Finalizó el: {new Date(torneo.fecha_fin).toLocaleDateString()}</p>
                 <p className="card-text">Tipo: {torneo.tipo}</p>
                 <Link to={`/torneos/${torneo.id}`} className="btn btn-info">
                   Ver torneo

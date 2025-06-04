@@ -88,7 +88,10 @@ const Enfrentamientos = ({ torneoId, estado, playoff }) => {
                         className="list-group-item d-flex justify-content-between align-items-center"
                       >
                         <span>
-                          {match.jugador1?.nombre} vs {match.jugador2?.nombre || 'BYE'}
+                          {!match.jugador2?.nombre ? 
+                            match.jugador1?.nombre : 
+                            `${match.jugador1?.nombre} vs ${match.jugador2?.nombre}`
+                          }
                         </span>
                         <span className={obtenerClaseTexto(match)}>
                           <strong>{obtenerTextoResultado(match)}</strong>

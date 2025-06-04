@@ -8,6 +8,7 @@ const CrearCuenta = () => {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [cargando, setCargando] = useState(false);
   const navigate = useNavigate();
 
   const esFormularioValido = () => {
@@ -20,6 +21,7 @@ const CrearCuenta = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setCargando(true);
 
     try {
       await registrarUsuario({ nombre, email, password });
@@ -28,6 +30,8 @@ const CrearCuenta = () => {
     } catch (error) {
       console.error('Error registrando usuario:', error);
       toast.error('Hubo un error al crear la cuenta. Revisa los datos.');
+    } finally {
+      setCargando(false);
     }
   };
 
@@ -66,7 +70,7 @@ const CrearCuenta = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <div className="form-text">Mínimo 6 caracteres.</div>
+          <div className="form-text">Mínimo 8 caracteres.</div>
         </div>
 
         <button 
@@ -74,7 +78,12 @@ const CrearCuenta = () => {
           className="btn btn-success"
           disabled={!esFormularioValido()}
         >
-          Registrarme
+          {cargando ? (<>
+            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Registrando...
+              </>
+              ) : ('Registrarme'
+            )}
         </button>
       </form>
     </div>

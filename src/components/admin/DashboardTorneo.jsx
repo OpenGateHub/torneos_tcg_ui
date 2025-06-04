@@ -10,8 +10,10 @@ const DashboardTorneo = ({ token }) => {
   const [torneo, setTorneo] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [hayPrimeraRonda, setHayPrimeraRonda] = useState(false);
+  const [generandoPrimeraRonda, setGenerandoPrimeraRonda] = useState(false);
   const [usuarios, setUsuarios] = useState([]);
   const [busqueda, setBusqueda] = useState('');
+  const [inscribiendoUsuario, setInscribiendoUsuario] = useState({}); // Objeto para manejar el estado de cada usuario
 
   useEffect(() => {
     if (torneoId) {
@@ -61,8 +63,11 @@ const DashboardTorneo = ({ token }) => {
 
 
   const handleGenerarPrimeraRonda = async () => {
+    setGenerandoPrimeraRonda(true);
+    const delayMinimo = new Promise(resolve => setTimeout(resolve, 2500));
     try {
-      await generarPrimeraRonda(torneoId, token);
+      const peticion = await generarPrimeraRonda(torneoId, token);
+      await Promise.all([delayMinimo,peticion])
       toast.success('Primera ronda generada');
       await obtenerDatosTorneo(); 
       await verificarPrimeraRonda(); 
@@ -70,6 +75,8 @@ const DashboardTorneo = ({ token }) => {
     } catch (error) {
       console.log(error);
       toast.error('Error al generar la primera ronda');
+    } finally{
+      setGenerandoPrimeraRonda(false);
     }
   };
   const cargarUsuarios = async () => {
@@ -82,15 +89,40 @@ const DashboardTorneo = ({ token }) => {
     }
   };
   
+  // Punto 4: Modificar función para agregar indicador de carga
   const inscribirUsuarios = async (usuarioId) => {
+    // Activar estado de carga para este usuario específico
+    setInscribiendoUsuario(prev => ({ ...prev, [usuarioId]: 'loading' }));
+    
     try {
       await inscribirUsuario(torneoId, usuarioId); 
+      
+      // Mostrar tilde verde por un momento
+      setInscribiendoUsuario(prev => ({ ...prev, [usuarioId]: 'success' }));
+      
       toast.success('Usuario inscripto');
       obtenerDatosTorneo(); 
-      cargarUsuarios();     
+      cargarUsuarios();
+      
+      // Limpiar el estado después de 1.5 segundos
+      setTimeout(() => {
+        setInscribiendoUsuario(prev => {
+          const nuevo = { ...prev };
+          delete nuevo[usuarioId];
+          return nuevo;
+        });
+      }, 1500);
+      
     } catch (error) {
       console.log(error);
       toast.error('No se pudo inscribir al usuario');
+      
+      // Limpiar estado de error
+      setInscribiendoUsuario(prev => {
+        const nuevo = { ...prev };
+        delete nuevo[usuarioId];
+        return nuevo;
+      });
     }
   };
   
@@ -98,6 +130,36 @@ const DashboardTorneo = ({ token }) => {
     u.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
     u.email.toLowerCase().includes(busqueda.toLowerCase())
   );
+
+  // Función para renderizar el botón de inscripción con estados
+  const renderBotonInscripcion = (usuarioId) => {
+    const estado = inscribiendoUsuario[usuarioId];
+    
+    if (estado === 'loading') {
+      return (
+        <button className="btn btn-outline-warning btn-sm" disabled>
+          <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        </button>
+      );
+    }
+    
+    if (estado === 'success') {
+      return (
+        <button className="btn btn-success btn-sm" disabled>
+          ✓
+        </button>
+      );
+    }
+    
+    return (
+      <button
+        className="btn btn-outline-primary btn-sm"
+        onClick={() => inscribirUsuarios(usuarioId)}
+      >
+        +
+      </button>
+    );
+  };
 
   if (cargando || !torneo) {
     return <div className="text-center mt-5">Cargando torneo...</div>;
@@ -163,13 +225,20 @@ const DashboardTorneo = ({ token }) => {
 
       {/* Botón para generar primera ronda */}
       {torneo.torneo.estado === 'en progreso' && (
-        <div className="text-center mb-4">
+        <div className={hayPrimeraRonda ? "text-center mb-4 d-none" : "text-center mb-4 "}>
           <button
             className="btn btn-primary"
             onClick={handleGenerarPrimeraRonda}
-            disabled={hayPrimeraRonda}
+            disabled={hayPrimeraRonda || generandoPrimeraRonda}
           >
-            {hayPrimeraRonda ? 'Primera Ronda Generada' : 'Generar Primera Ronda de Enfrentamientos'}
+            {generandoPrimeraRonda
+              ? <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Generando Primera Ronda...
+                </>
+              : (hayPrimeraRonda
+                ? 'Primera Ronda Generada'
+                : 'Generar Primera Ronda de Enfrentamientos')}
           </button>
         </div>
       )}
@@ -210,12 +279,8 @@ const DashboardTorneo = ({ token }) => {
                       <strong>{usuario.nombre}</strong><br />
                       <small>{usuario.email}</small>
                     </div>
-                    <button
-                      className="btn btn-outline-primary btn-sm"
-                      onClick={() => inscribirUsuarios(usuario.id)}
-                    >
-                      +
-                    </button>
+                    {/* Punto 4: Botón mejorado con estados de carga */}
+                    {renderBotonInscripcion(usuario.id)}
                   </li>
                 ))}
               </ul>

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { getTorneos } from '../services/torneosService';
+import AuthContext from '../context/AuthContext';
 
 const Home = () => {
   const [torneos, setTorneos] = useState({
@@ -8,6 +9,7 @@ const Home = () => {
     torneosFinalizados: []
   });
   const [cargando, setCargando] = useState(true);
+  const { auth } = useContext(AuthContext);
 
   useEffect(() => {
     const fetchTorneos = async () => {
@@ -30,9 +32,12 @@ const Home = () => {
       <h1 className="display-4 mb-3">🎴 Torneos de Cartas</h1>
       <p className="lead">¡Explorá, participá y demostrá tus habilidades!</p>
 
-      <Link to="/crear-cuenta" className="btn btn-primary btn-lg mt-3 mb-5">
-        Registrarse
-      </Link>
+      {!auth ? (
+        <Link to="/crear-cuenta" className="btn btn-primary btn-lg mt-3 mb-5">
+          Registrarse
+        </Link>
+          
+      ) : ''}
 
       {/* Torneos activos */}
       <h2 className="mb-4">🔥 Proximos Torneos</h2>
