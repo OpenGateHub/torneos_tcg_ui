@@ -1,3 +1,5 @@
+// THIS COMPONENT IS DEPRECATED PLEASE SEE /pages/login
+
 import { useState, useContext } from "react";
 import { loginUsuario } from "../../services/authService";
 import { useNavigate } from "react-router-dom";

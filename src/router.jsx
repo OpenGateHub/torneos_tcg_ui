@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route } from "react-router-dom";
 
 import Layout from "./components/layout/Layout";
 import Home from "./pages/Home";
@@ -13,11 +13,13 @@ import PrivateRoute from "./components/PrivateRoute";
 import UsuariosAdmin from "./components/admin/UsuariosAdmin";
 import DashboardTorneo from "./components/admin/DashboardTorneo";
 import CrearTorneo from "./components/torneos/CrearTorneo";
-import ConfirmarCuenta from "./components/login/ConfirmarCuenta";
-import ReestablecerPassword from "./components/login/RestablecerPassword";
-import OlvidePassword from "./components/login/OlvidePassword";
-import { LoginPage } from './pages/login';
-import { RegisterPage } from './pages/register';
+import { ConfirmAccount } from "@/pages/confirm-account";
+import {ResetPassword} from "@/pages/reset-password";
+import ForgotPassword from "@/pages/forgot-password";
+import { LoginPage } from "./pages/login";
+import { RegisterPage } from "./pages/register";
+import { AdminHomePage } from "./pages/admin/home";
+import AdminLayout from "./components/layout/admin-layout";
 
 export const AppRouter = () => {
     return (
@@ -33,36 +35,38 @@ export const AppRouter = () => {
                     <Route path="/login" element={<LoginPage />} />
                     <Route
                         path="/olvide-password"
-                        element={<OlvidePassword />}
+                        element={<ForgotPassword />}
                     />
                     <Route path="/perfil" element={<Perfil />} />
                     <Route
                         path="/confirmar-cuenta/:token"
-                        element={<ConfirmarCuenta />}
+                        element={<ConfirmAccount />}
                     />
                     <Route
                         path="/restablecer-password/:token"
-                        element={<ReestablecerPassword />}
-                    />
-                    {/* Admin Routes */}
-                    <Route
-                        path="/admin"
-                        element={<PrivateRoute element={Admin} />}
-                    />
-                    <Route
-                        path="/admin/torneos/crear"
-                        element={<PrivateRoute element={CrearTorneo} />}
-                    />
-                    <Route
-                        path="/admin/usuarios"
-                        element={<PrivateRoute element={UsuariosAdmin} />}
-                    />
-                    <Route
-                        path="/admin/torneos/:torneoId"
-                        element={<PrivateRoute element={DashboardTorneo} />}
+                        element={<ResetPassword />}
                     />
 
                     {/* Agregarás más rutas a medida que avances */}
+                </Route>
+                {/* Admin Routes */}
+                <Route path="/admin" element={<AdminLayout />}>
+                    <Route
+                        path=""
+                        element={<PrivateRoute element={AdminHomePage} />}
+                    />
+                    <Route
+                        path="torneos/crear"
+                        element={<PrivateRoute element={CrearTorneo} />}
+                    />
+                    <Route
+                        path="usuarios"
+                        element={<PrivateRoute element={UsuariosAdmin} />}
+                    />
+                    <Route
+                        path="torneos/:torneoId"
+                        element={<PrivateRoute element={DashboardTorneo} />}
+                    />
                 </Route>
             </Routes>
         </>

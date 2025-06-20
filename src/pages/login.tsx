@@ -1,6 +1,7 @@
 import type React from "react";
 
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,8 +14,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
+import AuthContext from "@/context/AuthContext";
+import { toast } from "react-toastify";
+import { loginUsuario } from "@/services/authService";
 
 export function LoginPage() {
+    const navigate = useNavigate();
+    const { login } = useContext(AuthContext);
     const [formData, setFormData] = useState({
         email: "",
         password: "",
@@ -23,19 +29,34 @@ export function LoginPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setError("");
         setIsLoading(true);
 
-        // Simulación de login
         try {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            console.log("Login attempt:", formData);
-            // Aquí iría la lógica real de autenticación
-            alert("Login exitoso!");
-        } catch (err) {
-            setError("Error al iniciar sesión");
+            const { token } = await loginUsuario(formData);
+
+            login(token); // ← Esta es la clave: actualizamos el contexto y redirige desde ahí
+            toast.success("¡Bienvenido de nuevo! 👋");
+            // No hace falta navigate('/perfil'), el contexto ya lo hace si querés, o podés mantenerlo acá si querés ir directo
+            navigate("/perfil");
+        } catch (error) {
+            console.error("Error en login:", error);
+
+            const mensaje =
+                error.response.data.mensaje ||
+                "Error desconocido. Intenta nuevamente.";
+            const mensajeNormalizado = mensaje
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "");
+            if (mensajeNormalizado.includes("confirmar tu cuenta")) {
+                toast.warning(
+                    "Debes confirmar tu correo electrónico antes de iniciar sesión."
+                );
+            } else {
+                toast.error("Credenciales incorrectas o cuenta inexistente.");
+            }
         } finally {
             setIsLoading(false);
         }

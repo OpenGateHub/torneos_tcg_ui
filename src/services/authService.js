@@ -21,7 +21,6 @@ export const confirmarCuenta = async (token) => {
   try {
     const response = await clienteAxios.get(`/confirmar-cuenta/${token}`);
     return response.data;
-
   } catch (error) {
     return {
       ok: false,
