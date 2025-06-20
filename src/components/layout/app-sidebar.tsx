@@ -37,7 +37,7 @@ const menuItems = [
   },
   {
     title: "Usuarios",
-    url: "/usuarios",
+    url: "/admin/usuarios",
     icon: Users,
   },
   {
@@ -57,7 +57,7 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col">
             <span className="font-semibold text-sm">Panel de Control</span>
-            <span className="text-xs text-muted-foreground">Gestión Deportiva</span>
+            <span className="text-xs text-muted-foreground">Gestión de Torneos</span>
           </div>
         </div>
       </SidebarHeader>

@@ -56,6 +56,10 @@ export const AppRouter = () => {
                         element={<PrivateRoute element={AdminHomePage} />}
                     />
                     <Route
+                        path="old"
+                        element={<PrivateRoute element={Admin} />}
+                    />
+                    <Route
                         path="torneos/crear"
                         element={<PrivateRoute element={CrearTorneo} />}
                     />
