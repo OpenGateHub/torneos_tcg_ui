@@ -6,6 +6,7 @@ import Torneos from "./pages/Torneos";
 import Profile from "./pages/profile";
 import Login from "./components/login/Login";
 import CrearCuenta from "./components/login/CrearCuenta";
+import AdminLayout from "./components/layout/admin-layout";
 
 import Torneo from "./pages/Torneo";
 import Admin from "./pages/Admin";
@@ -14,13 +15,13 @@ import UsuariosAdmin from "./components/admin/UsuariosAdmin";
 import DashboardTorneo from "./components/admin/DashboardTorneo";
 import CrearTorneo from "./components/torneos/CrearTorneo";
 import { ConfirmAccount } from "@/pages/confirm-account";
-import {ResetPassword} from "@/pages/reset-password";
+import { ResetPassword } from "@/pages/reset-password";
 import ForgotPassword from "@/pages/forgot-password";
 import { LoginPage } from "./pages/login";
 import { RegisterPage } from "./pages/register";
 import { AdminHomePage } from "./pages/admin/home";
-import AdminLayout from "./components/layout/admin-layout";
-
+import { LeaguesPage } from "@/pages/admin/leagues";
+import { TorneosPage } from "@/pages/admin/torneos";
 export const AppRouter = () => {
     return (
         <>
@@ -59,6 +60,8 @@ export const AppRouter = () => {
                         path="old"
                         element={<PrivateRoute element={Admin} />}
                     />
+                    <Route path="ligas" element={<LeaguesPage />} />
+                    <Route path="torneos" element={<TorneosPage />} />
                     <Route
                         path="torneos/crear"
                         element={<PrivateRoute element={CrearTorneo} />}

@@ -1,4 +1,5 @@
-import { Link, Trophy, Users, User, Settings } from "lucide-react"
+import { Link, Trophy, Users, User, Settings , LayoutDashboard} from "lucide-react"
+import {Link as RouterLink} from 'react-router-dom'
 
 import {
   Sidebar,
@@ -26,13 +27,18 @@ const currentUser = {
 // Opciones del menú
 const menuItems = [
   {
+    title: "Inicio",
+    url: "/admin",
+    icon: LayoutDashboard,
+  },
+  {
     title: "Ligas",
-    url: "/ligas",
+    url: "/admin/ligas",
     icon: Link,
   },
   {
     title: "Torneos",
-    url: "/torneos",
+    url: "/admin/torneos",
     icon: Trophy,
   },
   {
@@ -70,10 +76,10 @@ export function AppSidebar() {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url} className="flex items-center gap-3">
+                    <RouterLink to={item.url} className="flex items-center gap-3">
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
-                    </a>
+                    </RouterLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

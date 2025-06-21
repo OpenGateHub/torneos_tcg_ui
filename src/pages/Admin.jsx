@@ -4,7 +4,7 @@ import TorneosAdmin from '../components/admin/TorneosAdmin';
 
 
 const Admin = () => {
-  const [activeSection, setActiveSection] = useState('usuarios');
+  const [activeSection, setActiveSection] = useState('torneos');
 
   const handleSectionChange = (section) => {
     setActiveSection(section);
@@ -33,7 +33,6 @@ const Admin = () => {
 
         {/* Main content */}
         <div className="col-md-9">
-          {activeSection === 'usuarios' && <UsuariosAdmin />}
           {activeSection === 'torneos' && <TorneosAdmin />}
         </div>
       </div>
