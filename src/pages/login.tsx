@@ -39,7 +39,7 @@ export function LoginPage() {
             login(token); // ← Esta es la clave: actualizamos el contexto y redirige desde ahí
             toast.success("¡Bienvenido de nuevo! 👋");
             // No hace falta navigate('/perfil'), el contexto ya lo hace si querés, o podés mantenerlo acá si querés ir directo
-            navigate("/perfil");
+            window.location.href = '/perfil'
         } catch (error) {
             console.error("Error en login:", error);
 

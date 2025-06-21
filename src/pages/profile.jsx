@@ -1,5 +1,5 @@
 import { useEffect, useState, useContext } from "react";
-import { obtenerPerfil } from "../services/authService";
+import { getProfile } from "../services/authService";
 import { useNavigate } from "react-router-dom";
 import AuthContext from "../context/AuthContext";
 
@@ -37,9 +37,7 @@ import {
 import { useSession } from "@/hooks/use-session";
 
 export const Profile = () => {
-    const { auth } = useSession();
     const navigate = useNavigate();
-
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setLoading] = useState(true);
     const [userData, setUserData] = useState({
@@ -88,18 +86,10 @@ export const Profile = () => {
     };
 
     useEffect(() => {
-        console.log(auth);
-        debugger;
-        if (!auth?.token) {
-            console.log("no hay token");
-            navigate("/login");
-            return;
-        }
-
         const cargarPerfil = async () => {
             setLoading(true);
             try {
-                const data = await obtenerPerfil(auth?.token);
+                const data = await getProfile();
                 setUserData({
                     avatar: "",
                     bio: "",
@@ -119,7 +109,7 @@ export const Profile = () => {
         };
 
         cargarPerfil();
-    }, [navigate, auth?.token]);
+    }, [navigate]);
 
     if (isLoading)
         return <p className="text-center mt-4">Cargando perfil...</p>;

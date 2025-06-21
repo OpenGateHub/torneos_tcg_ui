@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Link } from "react-router-dom"
 
 export function TorneosPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -254,9 +255,11 @@ export function TorneosPage() {
             <h1 className="text-3xl font-bold">Gestión de Torneos</h1>
             <p className="text-muted-foreground">Administra todos los torneos de la plataforma</p>
           </div>
-          <Button className="bg-gradient-to-r from-blue-600 to-yellow-500 hover:from-blue-700 hover:to-yellow-600">
+          <Button asChild className="bg-gradient-to-r from-blue-600 to-yellow-500 hover:from-blue-700 hover:to-yellow-600">
+            <Link to={'/admin/torneos/crear'}>
             <Plus className="w-4 h-4 mr-2" />
             Crear Torneo
+            </Link>
           </Button>
         </div>
 
