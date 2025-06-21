@@ -3,7 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 import Home from "./pages/Home";
 import Torneos from "./pages/Torneos";
-import Perfil from "./pages/Perfil";
+import Profile from "./pages/profile";
 import Login from "./components/login/Login";
 import CrearCuenta from "./components/login/CrearCuenta";
 
@@ -37,7 +37,7 @@ export const AppRouter = () => {
                         path="/olvide-password"
                         element={<ForgotPassword />}
                     />
-                    <Route path="/perfil" element={<Perfil />} />
+                    <Route path="/perfil" element={<Profile />} />
                     <Route
                         path="/confirmar-cuenta/:token"
                         element={<ConfirmAccount />}
