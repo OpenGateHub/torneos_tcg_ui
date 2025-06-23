@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
 import { obtenerEnfrentamientos, obtenerRanking } from '../../services/torneosService';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
 import { toast } from 'react-toastify';
 
 const Enfrentamientos = ({ torneoId, estado, playoff }) => {
@@ -33,12 +39,17 @@ const Enfrentamientos = ({ torneoId, estado, playoff }) => {
     }
   }, [torneoId, estado]);
 
-  if (cargando) return <p>Cargando datos del torneo...</p>;
+  if (cargando) return (
+    <div className="flex items-center justify-center p-4">
+      <Loader2 className="h-6 w-6 animate-spin" />
+      <span className="ml-2">Cargando datos del torneo...</span>
+    </div>
+  );
 
   const obtenerClaseTexto = (match) => {
     if (!match.finalizado) return '';
-    if (match.jugador2 === null || !match.ganador) return 'text-warning';
-    return 'text-success';
+    if (match.jugador2 === null || !match.ganador) return 'text-yellow-500';
+    return 'text-green-600';
   };
 
   const obtenerTextoResultado = (match) => {
@@ -49,43 +60,26 @@ const Enfrentamientos = ({ torneoId, estado, playoff }) => {
   };
 
   return (
-    <div className="mt-4">
-      <h4>Enfrentamientos por Ronda</h4>
-      <div className="accordion" id="accordionRondas">
-        {rondas.map(([nombreRonda, enfrentamientos], index) => {
-          const collapseId = `collapse-${index}`;
-          const headingId = `heading-${index}`;
-          const isLast = index === rondas.length - 1;
-
-          return (
-            <div className="accordion-item" key={nombreRonda}>
-              <h2 className="accordion-header" id={headingId}>
-                <button
-                  className={`accordion-button ${!isLast ? 'collapsed' : ''}`}
-                  type="button"
-                  data-bs-toggle="collapse"
-                  data-bs-target={`#${collapseId}`}
-                  aria-expanded={isLast ? 'true' : 'false'}
-                  aria-controls={collapseId}
-                >
-                  {nombreRonda}
-                </button>
-              </h2>
-              <div
-                id={collapseId}
-                className={`accordion-collapse collapse ${isLast ? 'show' : ''}`}
-                aria-labelledby={headingId}
-                data-bs-parent="#accordionRondas"
-              >
-                <div className="accordion-body p-0">
-                  <ul className="list-group rounded-0">
-                    <li className="list-group-item d-flex justify-content-between align-items-center fw-bold bg-light">
-                      ENFRENTAMIENTO<span>RESULTADO</span>
-                    </li>
+    <div className="space-y-6">
+      <div>
+        <h4 className="text-xl font-semibold mb-4">Enfrentamientos por Ronda</h4>
+        <Accordion type="single" collapsible defaultValue={`item-${rondas.length - 1}`}>
+          {rondas.map(([nombreRonda, enfrentamientos], index) => (
+            <AccordionItem key={nombreRonda} value={`item-${index}`}>
+              <AccordionTrigger className="px-4">{nombreRonda}</AccordionTrigger>
+              <AccordionContent>
+                <Card>
+                  <CardHeader className="bg-muted/50 py-2">
+                    <div className="flex justify-between items-center px-4 font-semibold">
+                      <span>ENFRENTAMIENTO</span>
+                      <span>RESULTADO</span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
                     {enfrentamientos.map((match) => (
-                      <li
+                      <div
                         key={match.id}
-                        className="list-group-item d-flex justify-content-between align-items-center"
+                        className="flex justify-between items-center p-4 border-b last:border-b-0"
                       >
                         <span>
                           {!match.jugador2?.nombre ? 
@@ -96,68 +90,65 @@ const Enfrentamientos = ({ torneoId, estado, playoff }) => {
                         <span className={obtenerClaseTexto(match)}>
                           <strong>{obtenerTextoResultado(match)}</strong>
                         </span>
-                      </li>
+                      </div>
                     ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+                  </CardContent>
+                </Card>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
       </div>
 
-      <h4 className="mt-4">Ranking actual</h4>
-      {playoff > 0 && (
-        <div className="alert alert-info">
-          Top {playoff} clasifican a playoffs
-        </div>
-      )}
-      <table className="table table-striped">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Jugador</th>
-            <th>Victorias</th>
-            <th>Derrotas</th>
-            <th>Empates</th>
-            <th>Byes</th>
-            <th>Puntos</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ranking.map((jugador, index) => (
-            <tr 
-              key={jugador.id}
-              className={`
-                ${playoff > 0 && index + 1 === playoff ? 'border-bottom ' : ''}
-                ${playoff > 0 && index + 1 <= playoff ? 'border border-dark playoff-position' : ''}
-              `}
-            >
-              <td>{index + 1}</td>
-              <td>
-                {playoff > 0 && index + 1 <= playoff && (
-                  <span className="badge bg-success me-2">Playoff</span>
-                )}
-                {jugador.nombre}
-              </td>
-              <td>{jugador.victorias}</td>
-              <td>{jugador.derrotas}</td>
-              <td>{jugador.empates}</td>
-              <td>{jugador.byes}</td>
-              <td>{jugador.puntaje}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <style jsx="true">{`
-        .playoff-position {
-          background-color: rgba(0, 0, 0, 0.02) !important;
-        }
-        .playoff-position:hover {
-          background-color: rgba(0, 0, 0, 0.05) !important;
-        }
-      `}</style>
+      <div>
+        <h4 className="text-xl font-semibold mb-4">Ranking actual</h4>
+        {playoff > 0 && (
+          <Alert className="mb-4">
+            <AlertDescription>
+              Top {playoff} clasifican a playoffs
+            </AlertDescription>
+          </Alert>
+        )}
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12">#</TableHead>
+              <TableHead>Jugador</TableHead>
+              <TableHead>Victorias</TableHead>
+              <TableHead>Derrotas</TableHead>
+              <TableHead>Empates</TableHead>
+              <TableHead>Byes</TableHead>
+              <TableHead>Puntos</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {ranking.map((jugador, index) => (
+              <TableRow 
+                key={jugador.id}
+                className={`
+                  ${playoff > 0 && index + 1 <= playoff ? 'bg-muted/50' : ''}
+                  ${playoff > 0 && index + 1 === playoff ? 'border-b-2 border-border' : ''}
+                `}
+              >
+                <TableCell>{index + 1}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    {playoff > 0 && index + 1 <= playoff && (
+                      <Badge variant="success">Playoff</Badge>
+                    )}
+                    {jugador.nombre}
+                  </div>
+                </TableCell>
+                <TableCell>{jugador.victorias}</TableCell>
+                <TableCell>{jugador.derrotas}</TableCell>
+                <TableCell>{jugador.empates}</TableCell>
+                <TableCell>{jugador.byes}</TableCell>
+                <TableCell>{jugador.puntaje}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };

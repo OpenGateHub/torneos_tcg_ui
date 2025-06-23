@@ -2,8 +2,12 @@ import { useEffect, useState, useContext } from 'react';
 import { obtenerEnfrentamientos } from '../../services/torneosService';
 import { registrarResultados, generarSiguienteRonda, finalizarTorneo, registrarResultadoIndividual } from '../../services/adminService';
 import { toast } from 'react-toastify';
-import Swal from 'sweetalert2';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import AuthContext from '../../context/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Loader2 } from 'lucide-react';
 
 const AdminEnfrentamientos = ({ torneoId, rondasRecomendadas, setTorneo }) => {
   const [rondas, setRondas] = useState([]);
@@ -304,49 +308,35 @@ const AdminEnfrentamientos = ({ torneoId, rondasRecomendadas, setTorneo }) => {
     }
   };
 
-  if (cargando) return <p>Cargando enfrentamientos...</p>;
+  if (cargando) return (
+    <div className="flex items-center justify-center p-4">
+      <Loader2 className="h-6 w-6 animate-spin" />
+      <span className="ml-2">Cargando enfrentamientos...</span>
+    </div>
+  );
 
   return (
-    <div className="mt-4">
-      <h4>Gestión de Enfrentamientos</h4>
-      <div className="accordion" id="accordionAdminRondas">
+    <div className="mt-4 space-y-4">
+      <h4 className="text-xl font-semibold">Gestión de Enfrentamientos</h4>
+      <Accordion type="single" collapsible className="w-full">
         {rondas.map(([nombreRonda, enfrentamientos], index) => {
-          const collapseId = `collapse-admin-${index}`;
-          const headingId = `heading-admin-${index}`;
           const esUltima = esUltimaRonda(index);
 
           return (
-            <div className="accordion-item" key={nombreRonda}>
-              <h2 className="accordion-header" id={headingId}>
-                <button
-                  className={`accordion-button ${!esUltima ? 'collapsed' : ''}`}
-                  type="button"
-                  data-bs-toggle="collapse"
-                  data-bs-target={`#${collapseId}`}
-                  aria-expanded={esUltima ? 'true' : 'false'}
-                  aria-controls={collapseId}
-                >
-                  {nombreRonda}
-                </button>
-              </h2>
-              <div
-                id={collapseId}
-                className={`accordion-collapse collapse ${esUltima ? 'show' : ''}`}
-                aria-labelledby={headingId}
-                data-bs-parent="#accordionAdminRondas"
-              >
-                <div className="accordion-body p-0">
-                  <ul className="list-group rounded-0">
-                    <li className="list-group-item d-flex justify-content-between align-items-center fw-bold bg-light">
-                      ENFRENTAMIENTO <span>SELECCIÓN</span>
-                    </li>
+            <AccordionItem key={nombreRonda} value={`item-${index}`}>
+              <AccordionTrigger className="px-4">{nombreRonda}</AccordionTrigger>
+              <AccordionContent>
+                <Card>
+                  <CardHeader className="bg-muted/50 py-2">
+                    <div className="flex justify-between items-center px-4">
+                      <span className="font-semibold">ENFRENTAMIENTO</span>
+                      <span className="font-semibold">SELECCIÓN</span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
                     {enfrentamientos.map((match) => (
-                      <li
-                        key={match.id}
-                        className="list-group-item d-flex justify-content-between align-items-center"
-                      >
+                      <div key={match.id} className="flex justify-between items-center p-4 border-b last:border-b-0">
                         <span>
-                          
                           {match.jugador2 === null ? (
                             match.jugador1?.nombre
                           ) : (
@@ -356,43 +346,34 @@ const AdminEnfrentamientos = ({ torneoId, rondasRecomendadas, setTorneo }) => {
 
                         {esUltima ? (
                           match.jugador2 === null ? (
-                            <span className="text-warning fw-bold">BYE</span>
+                            <span className="text-yellow-500 font-semibold">BYE</span>
                           ) : (
-                            <div className="btn-group">
-                              <button
-                                className={`btn btn-sm ${
-                                  estaSeleccionado(match.id, match.jugador1?.id)
-                                    ? 'btn-success'
-                                    : 'btn-outline-success'
-                                }`}
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant={estaSeleccionado(match.id, match.jugador1?.id) ? "default" : "outline"}
                                 onClick={() => handleSeleccion(match.id, match.jugador1?.id)}
                               >
                                 {match.jugador1?.nombre}
-                              </button>
-                              <button
-                                className={`btn btn-sm ${
-                                  esEmpateSeleccionado(match.id)
-                                    ? 'btn-warning'
-                                    : 'btn-outline-warning'
-                                }`}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant={esEmpateSeleccionado(match.id) ? "warning" : "outline"}
                                 onClick={() => handleSeleccion(match.id, null, true)}
                               >
                                 Empate
-                              </button>
-                              <button
-                                className={`btn btn-sm ${
-                                  estaSeleccionado(match.id, match.jugador2?.id)
-                                    ? 'btn-success'
-                                    : 'btn-outline-success'
-                                }`}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant={estaSeleccionado(match.id, match.jugador2?.id) ? "default" : "outline"}
                                 onClick={() => handleSeleccion(match.id, match.jugador2?.id)}
                               >
                                 {match.jugador2?.nombre}
-                              </button>
+                              </Button>
                             </div>
                           )
                         ) : (
-                          <span>
+                          <span className="text-muted-foreground">
                             {match.finalizado
                               ? match.jugador2 === null
                                 ? 'BYE'
@@ -402,35 +383,35 @@ const AdminEnfrentamientos = ({ torneoId, rondasRecomendadas, setTorneo }) => {
                               : 'Pendiente'}
                           </span>
                         )}
-                      </li>
+                      </div>
                     ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
+                  </CardContent>
+                </Card>
+              </AccordionContent>
+            </AccordionItem>
           );
         })}
+      </Accordion>
+
+      <div className="flex gap-2 mt-4">
+        <Button
+          onClick={generarSiguienteRondaConGuardado}
+          disabled={guardando || !puedeGenerarSiguienteRonda}
+        >
+          {guardando ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {rondas.length >= rondasRecomendadas ? 'Finalizando Torneo...' : 'Generando Siguiente Ronda...'}
+            </>
+          ) : (
+            rondas.length >= rondasRecomendadas ? 'Finalizar Torneo' : 'Siguiente Ronda'
+          )}
+        </Button>
+
+        <Button variant="destructive" onClick={finalizarElTorneoManual} disabled={guardando}>
+          Finalizar Torneo (Manual)
+        </Button>
       </div>
-
-      
-      <button 
-        className="btn btn-primary mt-3 me-2" 
-        onClick={generarSiguienteRondaConGuardado} 
-        disabled={guardando || !puedeGenerarSiguienteRonda}
-      >
-        {guardando ? (
-          <>
-            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-            {rondas.length >= rondasRecomendadas ? 'Finalizando Torneo...' : 'Generando Siguiente Ronda...'}
-          </>
-        ) : (
-          rondas.length >= rondasRecomendadas ? 'Finalizar Torneo' : 'Siguiente Ronda'
-        )}
-      </button>
-
-      <button className="btn btn-danger mt-3 ms-2" onClick={finalizarElTorneoManual} disabled={guardando}>
-        Finalizar Torneo (Manual)
-      </button>
     </div>
   );
 };
