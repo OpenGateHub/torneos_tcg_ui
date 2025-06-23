@@ -35,6 +35,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useSession } from "@/hooks/use-session";
+import axiosClient from "@/services/axios";
+import { apiUrls } from "@/api/apiUrls";
 
 export const Profile = () => {
     const navigate = useNavigate();
@@ -47,6 +49,10 @@ export const Profile = () => {
         role: "admin", // o "jugador"
         avatar: "/placeholder.svg?height=120&width=120",
         bio: "Entrenador Pokémon apasionado con más de 5 años de experiencia en torneos competitivos.",
+        last_name: "",
+        dni: "",
+        provincia: "",
+        fechaNacimiento: "",
     });
 
     const stats = [
@@ -74,10 +80,22 @@ export const Profile = () => {
         },
     ];
 
+    const updateProfile = async (userData) => {
+        try {
+            const { data } = await axiosClient.put(
+                apiUrls.users.mutation(userData.id),
+                userData
+            );
+        } catch (error) {
+            console.log("error", error);
+        }
+    };
+
     const handleSave = () => {
         // Aquí iría la lógica para guardar los cambios
         setIsEditing(false);
         console.log("Guardando cambios:", userData);
+        updateProfile(userData)
     };
 
     const handleCancel = () => {
@@ -97,7 +115,11 @@ export const Profile = () => {
                     name: data.usuario.nombre,
                     memberSince: data.usuario.createdAt,
                     role: data.usuario.rol,
-                    ...data,
+                    id: data.usuario.id,
+                    last_name: data.usuario.last_name,
+                    dni: data.usuario.dni,
+                    provincia: data.usuario.provincia,
+                    birthdate: data.usuario.birthdate,
                 });
             } catch (error) {
                 console.error("Error al obtener perfil:", error);
@@ -251,6 +273,66 @@ export const Profile = () => {
                                                 setUserData({
                                                     ...userData,
                                                     name: e.target.value,
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="apellido">
+                                            Apellido
+                                        </Label>
+                                        <Input
+                                            id="apellido"
+                                            value={userData.last_name}
+                                            onChange={(e) =>
+                                                setUserData({
+                                                    ...userData,
+                                                    last_name: e.target.value,
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="dni">DNI</Label>
+                                        <Input
+                                            id="dni"
+                                            value={userData.dni}
+                                            onChange={(e) =>
+                                                setUserData({
+                                                    ...userData,
+                                                    dni: e.target.value,
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="provincia">
+                                            Provincia
+                                        </Label>
+                                        <Input
+                                            id="provincia"
+                                            value={userData.provincia}
+                                            onChange={(e) =>
+                                                setUserData({
+                                                    ...userData,
+                                                    provincia: e.target.value,
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="fechaNacimiento">
+                                            Fecha de Nacimiento
+                                        </Label>
+                                        <Input
+                                            id="fechaNacimiento"
+                                            type="date"
+                                            value={userData.fechaNacimiento}
+                                            onChange={(e) =>
+                                                setUserData({
+                                                    ...userData,
+                                                    fechaNacimiento:
+                                                        e.target.value,
                                                 })
                                             }
                                         />
@@ -430,9 +512,9 @@ export const Profile = () => {
                         {/* Logros */}
                         <Card>
                             <CardHeader>
-                                <CardTitle>Logros Recientes</CardTitle>
+                                <CardTitle>Ultimos resultados</CardTitle>
                                 <CardDescription>
-                                    Tus últimos logros desbloqueados
+                                    Tus últimos resultados
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -464,7 +546,7 @@ export const Profile = () => {
                     </div>
 
                     {/* Actividad Reciente */}
-                    <Card>
+                    {/* <Card>
                         <CardHeader>
                             <CardTitle>Actividad Reciente</CardTitle>
                             <CardDescription>
@@ -525,7 +607,7 @@ export const Profile = () => {
                                 </div>
                             </div>
                         </CardContent>
-                    </Card>
+                    </Card> */}
                 </div>
             </div>
         </>
