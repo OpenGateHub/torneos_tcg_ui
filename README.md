@@ -4,7 +4,7 @@ Este es el frontend del sistema para gestionar torneos de cartas, proporcionando
 
 ## Características
 
-- **Interfaz intuitiva y responsive** con Bootstrap.
+- **Interfaz intuitiva y responsive** con tailwind css.
 - **Autenticación de usuarios** mediante integración con el backend.
 - **Gestión de torneos** con visualización dinámica de estados.
 - **Consumo de API** utilizando Axios.
@@ -14,8 +14,9 @@ Este es el frontend del sistema para gestionar torneos de cartas, proporcionando
 ## Tecnologías
 
 - **Framework:** React.js
-- **Estilos:** Bootstrap
+- **Estilos:** Tailwind
 - **Compilación y desarrollo:** Vite
 - **Consumo de API:** Axios
 - **Gestión de estados:** React Context API
 - **Ruteo:** React Router
+- **React Query
