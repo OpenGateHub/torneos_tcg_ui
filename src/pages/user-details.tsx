@@ -97,7 +97,6 @@ export const Profile = () => {
                     name: data.usuario.nombre,
                     memberSince: data.usuario.createdAt,
                     role: data.usuario.rol,
-                    ...data,
                 });
             } catch (error) {
                 console.error("Error al obtener perfil:", error);
@@ -404,24 +403,6 @@ export const Profile = () => {
                                     </span>
                                     <span className="font-medium">
                                         {userData.memberSince}
-                                    </span>
-                                </div>
-                                <Separator />
-                                <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground">
-                                        Provincia
-                                    </span>
-                                    <span className="font-medium">
-                                        {userData.provincia}
-                                    </span>
-                                </div>
-                                <Separator />
-                                <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground">
-                                        DNI
-                                    </span>
-                                    <span className="font-medium">
-                                        {userData.dni}
                                     </span>
                                 </div>
                             </CardContent>

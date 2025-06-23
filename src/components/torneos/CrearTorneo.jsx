@@ -17,6 +17,9 @@ import { Label } from "@/components/ui/label";
 import { crearTorneo } from "@/services/torneosService";
 import { Textarea } from "../ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { useSession } from "@/hooks/use-session";
+import { useQueryClient } from "@tanstack/react-query";
+import { QueryKeys } from "@/api/queryKeys";
 
 const CrearTorneo = () => {
     const [nombre, setNombre] = useState("");
@@ -28,6 +31,8 @@ const CrearTorneo = () => {
     const [playoff, setPlayoff] = useState(0);
     const { auth } = useContext(AuthContext);
     const navigate = useNavigate();
+    const session = useSession()
+    const queryClient = useQueryClient()
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -40,6 +45,7 @@ const CrearTorneo = () => {
                 fecha_inicio: fechaInicio,
                 tipo,
                 playoff,
+                companyId: session.data.user_company.company
             };
 
             // Solo se agrega fecha_fin si existe
@@ -50,6 +56,9 @@ const CrearTorneo = () => {
             await crearTorneo(torneoData, token);
             toast.success("Torneo creado correctamente");
             navigate("/admin/torneos");
+            queryClient.invalidateQueries({
+                queryKey: QueryKeys.TOURNAMENTS_LIST
+            })
         } catch (err) {
             console.error(err);
             toast.error("Error al crear el torneo");

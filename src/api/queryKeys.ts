@@ -1,5 +1,6 @@
 
 
 export enum QueryKeys {
-    PROFILE = 'profile'
+    PROFILE = 'profile',
+    TOURNAMENTS_LIST = 'tournaments_list'
 }

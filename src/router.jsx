@@ -52,6 +52,7 @@ export const AppRouter = () => {
                 </Route>
                 {/* Admin Routes */}
                 <Route path="/admin" element={<AdminLayout />}>
+                    <Route path="perfil" element={<Profile />} />
                     <Route
                         path=""
                         element={<PrivateRoute element={AdminHomePage} />}
@@ -67,12 +68,16 @@ export const AppRouter = () => {
                         element={<PrivateRoute element={CrearTorneo} />}
                     />
                     <Route
+                        path="torneos/:torneoId"
+                        element={<PrivateRoute element={DashboardTorneo} />}
+                    />
+                    <Route
                         path="usuarios"
                         element={<PrivateRoute element={UsuariosAdmin} />}
                     />
                     <Route
-                        path="torneos/:torneoId"
-                        element={<PrivateRoute element={DashboardTorneo} />}
+                        path="usuarios/:id"
+                        element={<PrivateRoute element={UsuariosAdmin} />}
                     />
                 </Route>
             </Routes>

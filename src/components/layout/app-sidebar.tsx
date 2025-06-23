@@ -48,7 +48,7 @@ const menuItems = [
     },
     {
         title: "Información del Perfil",
-        url: "/perfil",
+        url: "/admin/perfil",
         icon: User,
     },
 ];
