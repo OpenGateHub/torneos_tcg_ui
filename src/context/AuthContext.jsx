@@ -29,6 +29,7 @@ const AuthProvider = ({ children }) => {
     const decoded = decodeJWT(token);
     const rol = decoded.rol;
     setAuth({ token, rol });
+    window.localStorage.setItem('auth_token', token)
     navigate('/'); // Redirige a home
   };
 

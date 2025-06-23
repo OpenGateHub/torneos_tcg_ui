@@ -1,9 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom'; 
 import { toast } from 'react-toastify';
-import { obtenerTorneoPorId, cerrarInscripciones, generarPrimeraRonda,chequearPrimeraRonda,obtenerUsuarios,inscribirUsuario } from '../../services/adminService';
+import { obtenerTorneoPorId, cerrarInscripciones, generarPrimeraRonda, chequearPrimeraRonda, obtenerUsuarios, inscribirUsuario } from '../../services/adminService';
 import AdminEnfrentamientos from '../torneos/AdminEnfrentamientos';
 import Enfrentamientos from '../torneos/Enfrentamientos';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Plus, Check, ChevronDown } from 'lucide-react';
 
 const DashboardTorneo = ({ token }) => {
   const { torneoId } = useParams(); 
@@ -13,7 +20,9 @@ const DashboardTorneo = ({ token }) => {
   const [generandoPrimeraRonda, setGenerandoPrimeraRonda] = useState(false);
   const [usuarios, setUsuarios] = useState([]);
   const [busqueda, setBusqueda] = useState('');
-  const [inscribiendoUsuario, setInscribiendoUsuario] = useState({}); // Objeto para manejar el estado de cada usuario
+  const [inscribiendoUsuario, setInscribiendoUsuario] = useState({});
+  const [isParticipantesOpen, setIsParticipantesOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     if (torneoId) {
@@ -24,14 +33,14 @@ const DashboardTorneo = ({ token }) => {
 
   useEffect(() => {
     if (torneo) {
-    cargarUsuarios();
+      cargarUsuarios();
     }
   }, [torneo]);
 
   const obtenerDatosTorneo = async () => {
     try {
       const datos = await obtenerTorneoPorId(torneoId, token);
-      setTorneo(datos);;
+      setTorneo(datos);
     } catch (error) {
       console.log(error);
       toast.error('Error al cargar el torneo');
@@ -59,15 +68,13 @@ const DashboardTorneo = ({ token }) => {
       console.error('Error al verificar primera ronda:', error);
     }
   };
-  
-
 
   const handleGenerarPrimeraRonda = async () => {
     setGenerandoPrimeraRonda(true);
     const delayMinimo = new Promise(resolve => setTimeout(resolve, 2500));
     try {
       const peticion = await generarPrimeraRonda(torneoId, token);
-      await Promise.all([delayMinimo,peticion])
+      await Promise.all([delayMinimo, peticion]);
       toast.success('Primera ronda generada');
       await obtenerDatosTorneo(); 
       await verificarPrimeraRonda(); 
@@ -75,10 +82,11 @@ const DashboardTorneo = ({ token }) => {
     } catch (error) {
       console.log(error);
       toast.error('Error al generar la primera ronda');
-    } finally{
+    } finally {
       setGenerandoPrimeraRonda(false);
     }
   };
+
   const cargarUsuarios = async () => {
     try {
       const res = await obtenerUsuarios(token); 
@@ -88,23 +96,19 @@ const DashboardTorneo = ({ token }) => {
       console.error('Error cargando usuarios:', error);
     }
   };
-  
-  // Punto 4: Modificar función para agregar indicador de carga
+
   const inscribirUsuarios = async (usuarioId) => {
-    // Activar estado de carga para este usuario específico
     setInscribiendoUsuario(prev => ({ ...prev, [usuarioId]: 'loading' }));
     
     try {
       await inscribirUsuario(torneoId, usuarioId); 
       
-      // Mostrar tilde verde por un momento
       setInscribiendoUsuario(prev => ({ ...prev, [usuarioId]: 'success' }));
       
       toast.success('Usuario inscripto');
       obtenerDatosTorneo(); 
       cargarUsuarios();
       
-      // Limpiar el estado después de 1.5 segundos
       setTimeout(() => {
         setInscribiendoUsuario(prev => {
           const nuevo = { ...prev };
@@ -117,7 +121,6 @@ const DashboardTorneo = ({ token }) => {
       console.log(error);
       toast.error('No se pudo inscribir al usuario');
       
-      // Limpiar estado de error
       setInscribiendoUsuario(prev => {
         const nuevo = { ...prev };
         delete nuevo[usuarioId];
@@ -131,166 +134,205 @@ const DashboardTorneo = ({ token }) => {
     u.email.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  // Función para renderizar el botón de inscripción con estados
   const renderBotonInscripcion = (usuarioId) => {
     const estado = inscribiendoUsuario[usuarioId];
     
     if (estado === 'loading') {
       return (
-        <button className="btn btn-outline-warning btn-sm" disabled>
-          <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-        </button>
+        <Button variant="outline" size="sm" disabled>
+          <Loader2 className="h-4 w-4 animate-spin" />
+        </Button>
       );
     }
     
     if (estado === 'success') {
       return (
-        <button className="btn btn-success btn-sm" disabled>
-          ✓
-        </button>
+        <Button variant="default" size="sm" disabled className="bg-green-600 hover:bg-green-600">
+          <Check className="h-4 w-4" />
+        </Button>
       );
     }
     
     return (
-      <button
-        className="btn btn-outline-primary btn-sm"
+      <Button
+        variant="outline"
+        size="sm"
         onClick={() => inscribirUsuarios(usuarioId)}
       >
-        +
-      </button>
+        <Plus className="h-4 w-4" />
+      </Button>
     );
   };
 
   if (cargando || !torneo) {
-    return <div className="text-center mt-5">Cargando torneo...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Cargando torneo...</span>
+      </div>
+    );
   }
+
   return (
-    <div className="container my-4">
-      <h2 className="mb-4">Panel del Torneo</h2>
+    <div className="container mx-auto my-8 px-4 max-w-6xl">
+      <h2 className="text-3xl font-bold mb-6">Panel del Torneo</h2>
 
       {/* Resumen del torneo */}
-      <div className="card mb-4">
-        <div className="card-body">
-          <h4 className="card-title">{torneo.torneo.nombre}</h4>
-          <p className="card-text">{torneo.torneo.descripcion}</p>
-          <p className="card-text">
-            <p><strong>Fecha de inicio:</strong> {new Date(torneo.torneo.fecha_inicio).toLocaleDateString('es-AR')}</p>
-            <strong>Estado:</strong> {torneo.torneo.estado}
-            <p><strong>Tipo:</strong> {torneo.torneo.tipo}</p>
-            <p><strong>Playoff:</strong> {torneo.torneo.playoff}</p>
-          </p>
-          {torneo.torneo.estado === 'activo' && (
-            <button className="btn btn-warning" onClick={handleCerrarInscripciones}>
-              Cerrar Inscripciones
-            </button>
-          )}
-          <p className="card-text">
-            <strong>Rondas Recomendadas:</strong> {torneo.rondasRecomendadas}<br />
-          </p>
-        </div>
-      </div>
-
-      {/* Lista de inscriptos */}
-      <div className="accordion mb-4" id="accordionInscriptos">
-        <div className="accordion-item">
-          <h2 className="accordion-header d-flex justify-content-between align-items-center" id="headingInscriptos">
-            <button className="accordion-button w-100" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInscriptos" aria-expanded="true" aria-controls="collapseInscriptos">
-              Participantes ({torneo.inscriptos ? torneo.inscriptos.length : 0})
-            </button>
-            {torneo.torneo.estado === 'activo' && (
-              <button className="btn btn-sm btn-success mx-2" data-bs-toggle="modal" data-bs-target="#modalAgregarParticipante">
-                + Agregar Participante
-              </button>
-            )}
-          </h2>
-          <div id="collapseInscriptos" className="accordion-collapse collapse" aria-labelledby="headingInscriptos" data-bs-parent="#accordionInscriptos">
-            <div className="accordion-body">
-              {torneo.inscriptos && torneo.inscriptos.length > 0 ? (
-                <ul className="list-group">
-                  {torneo.inscriptos.map((usuario) => (
-                    <li key={usuario.id} className="list-group-item">
-                      <strong>{usuario.nombre}</strong> <br />
-                      <span>{usuario.email}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No hay usuarios inscriptos aún.</p>
-              )}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-2xl">{torneo.torneo.nombre}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-gray-600">{torneo.torneo.descripcion}</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <p className="font-semibold text-sm text-gray-500">Fecha de inicio</p>
+              <p>{new Date(torneo.torneo.fecha_inicio).toLocaleDateString('es-AR')}</p>
+            </div>
+            <div>
+              <p className="font-semibold text-sm text-gray-500">Estado</p>
+              <Badge variant={torneo.torneo.estado === 'activo' ? 'default' : torneo.torneo.estado === 'en progreso' ? 'secondary' : 'outline'}>
+                {torneo.torneo.estado}
+              </Badge>
+            </div>
+            <div>
+              <p className="font-semibold text-sm text-gray-500">Tipo</p>
+              <p>{torneo.torneo.tipo}</p>
+            </div>
+            <div>
+              <p className="font-semibold text-sm text-gray-500">Playoff</p>
+              <p>{torneo.torneo.playoff}</p>
             </div>
           </div>
-        </div>
-      </div>
 
+          <div>
+            <p className="font-semibold text-sm text-gray-500">Rondas Recomendadas</p>
+            <p>{torneo.rondasRecomendadas}</p>
+          </div>
+
+          {torneo.torneo.estado === 'activo' && (
+            <Button variant="destructive" onClick={handleCerrarInscripciones}>
+              Cerrar Inscripciones
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Lista de inscriptos */}
+      <Card className="mb-6">
+        <Collapsible open={isParticipantesOpen} onOpenChange={setIsParticipantesOpen}>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
+              <div className="flex justify-between items-center w-full">
+                <CardTitle className="flex items-center gap-2">
+                  Participantes ({torneo.inscriptos ? torneo.inscriptos.length : 0})
+                  <ChevronDown className={`h-4 w-4 transition-transform ${isParticipantesOpen ? 'rotate-180' : ''}`} />
+                </CardTitle>
+                {torneo.torneo.estado === 'activo' && (
+                  <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" onClick={(e) => e.stopPropagation()}>
+                        <Plus className="h-4 w-4 mr-1" />
+                        Agregar Participante
+                      </Button>
+                    </DialogTrigger>
+                  </Dialog>
+                )}
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent>
+              {torneo.inscriptos && torneo.inscriptos.length > 0 ? (
+                <div className="space-y-2">
+                  {torneo.inscriptos.map((usuario) => (
+                    <div key={usuario.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-semibold">{usuario.nombre}</p>
+                        <p className="text-sm text-gray-500">{usuario.email}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500">No hay usuarios inscriptos aún.</p>
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
 
       {/* Botón para generar primera ronda */}
       {torneo.torneo.estado === 'en progreso' && (
-        <div className={hayPrimeraRonda ? "text-center mb-4 d-none" : "text-center mb-4 "}>
-          <button
-            className="btn btn-primary"
+        <div className={`text-center mb-6 ${hayPrimeraRonda ? 'hidden' : ''}`}>
+          <Button
+            size="lg"
             onClick={handleGenerarPrimeraRonda}
             disabled={hayPrimeraRonda || generandoPrimeraRonda}
           >
-            {generandoPrimeraRonda
-              ? <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  Generando Primera Ronda...
-                </>
-              : (hayPrimeraRonda
+            {generandoPrimeraRonda ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Generando Primera Ronda...
+              </>
+            ) : (
+              hayPrimeraRonda
                 ? 'Primera Ronda Generada'
-                : 'Generar Primera Ronda de Enfrentamientos')}
-          </button>
+                : 'Generar Primera Ronda de Enfrentamientos'
+            )}
+          </Button>
         </div>
       )}
 
       {/* Componente de administración de enfrentamientos */}
-        {torneo.torneo.estado === 'en progreso' && (
-          <AdminEnfrentamientos torneoId={torneoId} token={token} setTorneo={setTorneo} estado={torneo.torneo.estado} rondasRecomendadas={torneo.rondasRecomendadas} />
-        )}
+      {torneo.torneo.estado === 'en progreso' && (
+        <AdminEnfrentamientos 
+          torneoId={torneoId} 
+          token={token} 
+          setTorneo={setTorneo} 
+          estado={torneo.torneo.estado} 
+          rondasRecomendadas={torneo.rondasRecomendadas} 
+        />
+      )}
 
-        {torneo.torneo.estado === 'cerrado' && (
-          <Enfrentamientos 
-            torneoId={torneoId} 
-            estado={torneo.torneo.estado}
-            playoff={torneo.torneo.playoff}
-          />
-        )}
+      {torneo.torneo.estado === 'cerrado' && (
+        <Enfrentamientos 
+          torneoId={torneoId} 
+          estado={torneo.torneo.estado}
+          playoff={torneo.torneo.playoff}
+        />
+      )}
+
       {/* Modal para agregar participante */}
       {torneo.torneo.estado === 'activo' && (
-      <div className="modal fade" id="modalAgregarParticipante" tabIndex="-1" aria-labelledby="modalLabel" aria-hidden="true">
-        <div className="modal-dialog modal-lg">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id="modalLabel">Agregar Participante</h5>
-              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body">
-              <input
-                type="text"
-                className="form-control mb-3"
+        <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Agregar Participante</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Input
                 placeholder="Buscar por nombre o email..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
               />
-              <ul className="list-group">
+              <div className="max-h-96 overflow-y-auto space-y-2">
                 {usuariosFiltrados.map(usuario => (
-                  <li key={usuario.id} className="list-group-item d-flex justify-content-between align-items-center">
+                  <div key={usuario.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
-                      <strong>{usuario.nombre}</strong><br />
-                      <small>{usuario.email}</small>
+                      <p className="font-semibold">{usuario.nombre}</p>
+                      <p className="text-sm text-gray-500">{usuario.email}</p>
                     </div>
-                    {/* Punto 4: Botón mejorado con estados de carga */}
                     {renderBotonInscripcion(usuario.id)}
-                  </li>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
-
   );
 };
 

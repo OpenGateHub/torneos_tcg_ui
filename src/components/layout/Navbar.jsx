@@ -1,72 +1,89 @@
 // src/components/Navbar.jsx
-import { Link } from 'react-router-dom';
-import { useContext } from 'react';
-import AuthContext from '../../context/AuthContext';
+import { Link } from "react-router-dom";
+import { useContext, useState } from "react";
+import AuthContext from "../../context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const Navbar = () => {
   const { auth, logout } = useContext(AuthContext);
+  const [open, setOpen] = useState(false);
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
-      <div className="container">
-        <Link className="navbar-brand fw-bold" to="/">Torneos TCG</Link>
+    <nav className="bg-white border-b shadow-sm">
+      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+        {/* Marca */}
+        <Link to="/" className="text-xl font-bold text-gray-800">
+          Torneos TCG
+        </Link>
 
-        {/* Botón de menú hamburguesa para pantallas pequeñas */}
-        <button
-          className="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-          aria-controls="navbarNav"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
-        >
-          <span className="navbar-toggler-icon"></span>
-        </button>
+        {/* Menú hamburguesa para mobile */}
+        <div className="lg:hidden">
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="w-6 h-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right">
+              <div className="flex flex-col gap-4 mt-6">
+                <Link to="/torneos" onClick={() => setOpen(false)}>Torneos</Link>
+                {auth?.rol === "admin" && (
+                  <Link to="/admin" onClick={() => setOpen(false)}>Dashboard</Link>
+                )}
+                {auth ? (
+                  <>
+                    <Link to="/perfil" onClick={() => setOpen(false)}>Perfil</Link>
+                    <Button variant="destructive" onClick={() => { logout(); setOpen(false); }}>
+                      Cerrar sesión
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login" onClick={() => setOpen(false)}>Iniciar Sesión</Link>
+                    <Button asChild onClick={() => setOpen(false)}>
+                      <Link to="/crear-cuenta">Crear Cuenta</Link>
+                    </Button>
+                  </>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
 
-        {/* Menú de navegación */}
-        <div className="collapse navbar-collapse" id="navbarNav">
-          <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-            {/* Enlace Torneos */}
-            <li className="nav-item">
-              <Link className="nav-link" to="/torneos">Torneos</Link>
-            </li>
+        {/* Menú para pantallas grandes */}
+        <div className="hidden lg:flex items-center gap-6">
+          <Link to="/torneos" className="text-sm text-gray-700 hover:text-gray-900">
+            Torneos
+          </Link>
+          {auth?.rol === "admin" && (
+            <Link to="/admin" className="text-sm text-gray-700 hover:text-gray-900">
+              Dashboard
+            </Link>
+          )}
+        </div>
 
-            {/* Enlace de Dashboard solo visible para admin */}
-            {auth?.rol === 'admin' && (
-              <li className="nav-item">
-                <Link className="nav-link" to="/admin">Dashboard</Link>
-              </li>
-            )}
-          </ul>
-
-          <ul className="navbar-nav ms-auto mb-2 mb-lg-0">
-            {/* Si el usuario está logueado */}
-            {auth ? (
-              <>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/perfil">Perfil</Link>
-                </li>
-                <li className="nav-item">
-                  <button className="btn btn-outline-danger ms-2" onClick={logout}>
-                    Cerrar sesión
-                  </button>
-                </li>
-              </>
-            ) : (
-              <>
-                {/* Si el usuario no está logueado */}
-                <li className="nav-item">
-                  <Link className="nav-link" to="/login">Iniciar Sesión</Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="btn btn-primary ms-2" to="/crear-cuenta">
-                    Crear Cuenta
-                  </Link>
-                </li>
-              </>
-            )}
-          </ul>
+        <div className="hidden lg:flex items-center gap-4">
+          {auth ? (
+            <>
+              <Link to="/perfil" className="text-sm text-gray-700 hover:text-gray-900">
+                Perfil
+              </Link>
+              <Button variant="destructive" onClick={logout}>
+                Cerrar sesión
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="text-sm text-gray-700 hover:text-gray-900">
+                Iniciar Sesión
+              </Link>
+              <Button asChild>
+                <Link to="/crear-cuenta">Crear Cuenta</Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </nav>

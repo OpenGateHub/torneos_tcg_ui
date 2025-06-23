@@ -1,3 +1,4 @@
+// THIS component is deprecated PLEASE SEE page/register
 import { useState } from 'react';
 import { registrarUsuario } from '../../services/authService';
 import { useNavigate } from 'react-router-dom';
