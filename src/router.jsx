@@ -65,7 +65,7 @@ export const AppRouter = () => {
                     />
                     <Route path="ligas" element={<LeaguesPage />} />
                     <Route
-                        path="ligas/detalle/:id"
+                        path="ligas/detalles/:id"
                         element={<LeagueDetailPage />}
                     />
                     <Route

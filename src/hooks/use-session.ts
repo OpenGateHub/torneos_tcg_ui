@@ -1,13 +1,11 @@
 import { QueryKeys } from "@/api/queryKeys";
 import { getProfile } from "@/services/authService";
-import { ProfileType } from "@/types/profile.types";
+import { Session } from "@/types/profile.types";
 import { useQuery } from "@tanstack/react-query";
 
 export const useSession = () => {
     const token = localStorage.getItem("auth_token");
-    const query = useQuery<{
-        usuario: ProfileType;
-    }>({
+    const query = useQuery<Session>({
         queryFn: () => getProfile(token),
         queryKey: [QueryKeys.PROFILE],
     });

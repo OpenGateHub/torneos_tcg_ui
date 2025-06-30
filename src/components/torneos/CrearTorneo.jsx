@@ -22,22 +22,24 @@ import { useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "@/api/queryKeys";
 
 const CrearTorneo = () => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const leagueId = Number(queryParams.get("league"));
     const [nombre, setNombre] = useState("");
     const [descripcion, setDescripcion] = useState("");
     const [fechaInicio, setFechaInicio] = useState("");
     const [tipo, setTipo] = useState("casual");
     const [fechaFin, setFechaFin] = useState(null);
-    const [isLoading, setLoading] = useState(false)
+    const [isLoading, setLoading] = useState(false);
     const [playoff, setPlayoff] = useState(0);
     const { auth } = useContext(AuthContext);
     const navigate = useNavigate();
-    const session = useSession()
-    const queryClient = useQueryClient()
+    const session = useSession();
+    const queryClient = useQueryClient();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            setLoading(true)
+            setLoading(true);
             const token = auth;
             const torneoData = {
                 nombre,
@@ -45,7 +47,8 @@ const CrearTorneo = () => {
                 fecha_inicio: fechaInicio,
                 tipo,
                 playoff,
-                companyId: session.data.user_company.company
+                companyId: session.data.user_company.company,
+                leagueId,
             };
 
             // Solo se agrega fecha_fin si existe
@@ -55,15 +58,15 @@ const CrearTorneo = () => {
 
             await crearTorneo(torneoData, token);
             toast.success("Torneo creado correctamente");
-            navigate("/admin/torneos");
+            navigate("/admin/ligas/detalles/" + leagueId);
             queryClient.invalidateQueries({
-                queryKey: QueryKeys.TOURNAMENTS_LIST
-            })
+                queryKey: QueryKeys.TOURNAMENTS_LIST,
+            });
         } catch (err) {
             console.error(err);
             toast.error("Error al crear el torneo");
-        }finally{
-          setLoading(false)
+        } finally {
+            setLoading(false);
         }
     };
 

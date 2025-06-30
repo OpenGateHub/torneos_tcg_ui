@@ -36,11 +36,11 @@ const menuItems = [
         url: "/admin/ligas",
         icon: Link,
     },
-    {
-        title: "Torneos",
-        url: "/admin/torneos",
-        icon: Trophy,
-    },
+    // {
+    //     title: "Torneos",
+    //     url: "/admin/torneos",
+    //     icon: Trophy,
+    // },
     {
         title: "Usuarios",
         url: "/admin/usuarios",

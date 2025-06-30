@@ -1,29 +1,18 @@
-"use client";
-
-import { useState } from "react";
-import {
-    Plus,
-    Users,
-    Clock,
-    CheckCircle,
-} from "lucide-react";
+import { Plus, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
 
 import { Link } from "react-router-dom";
 import { useTorneosList } from "@/hooks/use-torneos-list";
 import { TournamentCard } from "@/components/admin/torneos/card-torneo";
 
-export function TorneosPage() {
-    const [searchTerm, setSearchTerm] = useState("");
-    const [filterFormat, setFilterFormat] = useState("all");
-
+export function TorneosPage({ leagueId }: { leagueId?: number }) {
     const torneos = useTorneosList();
+
+    if (torneos.isLoading) {
+        return <div>loading...</div>;
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-yellow-50 p-4">
@@ -35,11 +24,11 @@ export function TorneosPage() {
                             Gestión de Torneos
                         </h1>
                         <p className="text-muted-foreground">
-                            Administra todos los torneos de la plataforma
+                            Administra los torneos de esta liga
                         </p>
                     </div>
                     <Button asChild>
-                        <Link to={"/admin/torneos/crear"}>
+                        <Link to={`/admin/torneos/crear?league=${leagueId}`}>
                             <Plus className="w-4 h-4 mr-2" />
                             Crear Torneo
                         </Link>
@@ -47,7 +36,7 @@ export function TorneosPage() {
                 </div>
 
                 {/* Filtros y Búsqueda */}
-                <Card>
+                {/* <Card>
                     <CardContent className="pt-6">
                         <div className="flex flex-col md:flex-row gap-4">
                             <div className="flex-1">
@@ -62,10 +51,10 @@ export function TorneosPage() {
                             </div>
                         </div>
                     </CardContent>
-                </Card>
+                </Card> */}
 
                 {/* Estadísticas Rápidas */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {/* <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     <Card>
                         <CardContent className="pt-6">
                             <div className="flex items-center gap-3">
@@ -117,21 +106,7 @@ export function TorneosPage() {
                             </div>
                         </CardContent>
                     </Card>
-
-                    {/* <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-r from-yellow-100 to-orange-100 rounded-lg">
-                  <Trophy className="w-5 h-5 text-yellow-600" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold">₡375K</div>
-                  <div className="text-sm text-muted-foreground">Premios Activos</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card> */}
-                </div>
+                </div> */}
 
                 {/* Tabs de Torneos */}
                 <Tabs defaultValue="active" className="space-y-6">
@@ -141,7 +116,7 @@ export function TorneosPage() {
                             className="flex items-center gap-2"
                         >
                             <Clock className="w-4 h-4" />
-                            Torneos Activos ({torneos?.data?.pagination.totalItems})
+                            Torneos Activos ({torneos?.data?.pagination.count})
                         </TabsTrigger>
                         {/* <TabsTrigger
                             value="finished"
@@ -153,7 +128,7 @@ export function TorneosPage() {
                     </TabsList>
 
                     <TabsContent value="active" className="space-y-4">
-                        {torneos?.data?.pagination?.totalItems > 0 ? (
+                        {torneos?.data?.pagination?.count > 0 ? (
                             <div className="grid gap-4">
                                 {torneos?.data?.data?.map((tournament) => (
                                     <TournamentCard
@@ -171,9 +146,7 @@ export function TorneosPage() {
                                         No hay torneos activos
                                     </h3>
                                     <p className="text-muted-foreground mb-4">
-                                        {searchTerm || filterFormat !== "all"
-                                            ? "No se encontraron torneos con los filtros aplicados"
-                                            : "Crea un nuevo torneo para comenzar"}
+                                        "Crea un nuevo torneo para comenzar"
                                     </p>
                                     <Button className="bg-gradient-to-r from-blue-600 to-yellow-500">
                                         <Plus className="w-4 h-4 mr-2" />

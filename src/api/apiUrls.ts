@@ -7,5 +7,10 @@ export const apiUrls = {
     },
     rounds: {
         open: (id: number, numberRound: number) => `/torneos/${id}/ronda/${numberRound}`
+    },
+    leagues: {
+        base: '/leagues',
+        mutation: (id: number) => `/leagues/${id}`,
+        details: (id: number) => `/leagues/${id}`
     }
 }

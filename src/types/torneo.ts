@@ -19,10 +19,9 @@ export interface Torneo {
 export interface PaginatedResponse<T> {
   data: T[];
   pagination: {
-    totalItems: number;
-    itemsPerPage: number;
-    currentPage: number;
+    count: number;
     totalPages: number;
+    currentPage: number;
     hasNextPage: boolean;
     hasPreviousPage: boolean;
     nextPage: string | null;
@@ -33,3 +32,4 @@ export interface PaginatedResponse<T> {
 }
 
 export type TorneosResponse = PaginatedResponse<Torneo>;
+
