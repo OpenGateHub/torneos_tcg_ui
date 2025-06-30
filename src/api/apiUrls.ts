@@ -3,6 +3,9 @@ export const apiUrls = {
         base: '/tournaments',
     },
     users: {
-        mutation: (id:number) => `/users/${id}`
+        mutation: (id: number) => `/users/${id}`
+    },
+    rounds: {
+        open: (id: number, numberRound: number) => `/torneos/${id}/ronda/${numberRound}`
     }
 }
