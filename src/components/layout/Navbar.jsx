@@ -5,11 +5,11 @@ import AuthContext from "../../context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useSession } from "@/hooks/use-session";
 
 const Navbar = () => {
   const { auth, logout } = useContext(AuthContext);
   const [open, setOpen] = useState(false);
-
   return (
     <nav className="bg-white border-b shadow-sm">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">

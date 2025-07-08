@@ -24,6 +24,7 @@ import { LeaguesPage } from "@/pages/admin/leagues";
 import { TorneosPage } from "@/pages/admin/torneos";
 import { LeagueDetailPage } from "./pages/admin/leagues-details";
 import { LeagueTablePage } from "./pages/admin/leagues-position-table";
+import { StorePage } from "./pages/store";
 export const AppRouter = () => {
     return (
         <>
@@ -89,6 +90,10 @@ export const AppRouter = () => {
                     <Route
                         path="usuarios/:id"
                         element={<PrivateRoute element={UsuariosAdmin} />}
+                    />
+                    <Route
+                        path="tienda"
+                        element={<PrivateRoute element={StorePage} />}
                     />
                 </Route>
             </Routes>

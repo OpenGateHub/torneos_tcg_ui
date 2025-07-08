@@ -19,6 +19,7 @@ import {
     Card,
     CardContent,
     CardDescription,
+    CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
@@ -37,11 +38,26 @@ import {
 import { useSession } from "@/hooks/use-session";
 import axiosClient from "@/services/axios";
 import { apiUrls } from "@/api/apiUrls";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { CreateFormStore } from "@/components/store/create_form";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { QueryKeys } from "@/api/queryKeys";
+import { EditFormStore } from "@/components/store/edit_form";
 
 export const Profile = () => {
     const navigate = useNavigate();
+    const session = useSession();
+    const queryClient = useQueryClient();
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setLoading] = useState(true);
+    const [showEditCompanyModal, setShowEditCompanyModal] = useState(false);
     const [userData, setUserData] = useState({
         name: "Javier Mora",
         email: "javier@email.com",
@@ -54,13 +70,33 @@ export const Profile = () => {
         provincia: "",
         fechaNacimiento: "",
     });
+    const [companyData, setCompanyData] = useState({
+        name: "",
+        address: "",
+        phone: "",
+        email: "",
+        coin_name: "",
+    });
 
-    const stats = [
-        { label: "Torneos Jugados", value: "47", icon: Trophy },
-        { label: "Victorias", value: "32", icon: Award },
-        { label: "Tasa de Victoria", value: "68%", icon: Target },
-        { label: "Ranking Actual", value: "#156", icon: Shield },
-    ];
+    const [showStoreQuestionModal, setShowStoreQuestionModal] = useState(false);
+    const [showStoreInfoModal, setShowStoreInfoModal] = useState(false);
+    const [showNoStoreModal, setShowNoStoreModal] = useState(false);
+    const profileMutation = useMutation({
+        mutationFn: async (userData) => {
+            await axiosClient.put(
+                apiUrls.users.mutation(session.data.usuario.id),
+                {
+                    show_is_company_modal: false,
+                }
+            );
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: [QueryKeys.PROFILE],
+            });
+            setShowNoStoreModal(false);
+        },
+    });
 
     const achievements = [
         {
@@ -95,12 +131,25 @@ export const Profile = () => {
         // Aquí iría la lógica para guardar los cambios
         setIsEditing(false);
         console.log("Guardando cambios:", userData);
-        updateProfile(userData)
+        updateProfile(userData);
     };
 
     const handleCancel = () => {
         setIsEditing(false);
         // Aquí podrías revertir los cambios si es necesario
+    };
+
+    const handleStoreYes = () => {
+        setShowStoreQuestionModal(false);
+        setShowStoreInfoModal(true);
+    };
+    const handleStoreNo = () => {
+        setShowStoreQuestionModal(false);
+        setShowNoStoreModal(true);
+    };
+    const handleDontShowAgain = () => {
+        /// api call
+        profileMutation.mutate();
     };
 
     useEffect(() => {
@@ -121,6 +170,9 @@ export const Profile = () => {
                     provincia: data.usuario.provincia,
                     birthdate: data.usuario.birthdate,
                 });
+                if (data?.usuario.show_is_company_modal) {
+                    setShowStoreQuestionModal(true);
+                }
             } catch (error) {
                 console.error("Error al obtener perfil:", error);
                 if (error.response?.status === 401) {
@@ -134,29 +186,17 @@ export const Profile = () => {
         cargarPerfil();
     }, [navigate]);
 
+    useEffect(() => {
+        if (!session.isLoading) {
+            setCompanyData(session.data.user_company.Company);
+        }
+    }, [session.data]);
+
     if (isLoading)
         return <p className="text-center mt-4">Cargando perfil...</p>;
 
     return (
         <>
-            {/* <div className="max-w-md mx-auto bg-white rounded-xl shadow-md p-6 mt-4">
-                <h2 className="text-xl font-semibold mb-4">
-                    Perfil de Usuario
-                </h2>
-                <p>
-                    <strong>Nombre:</strong> {userData.nombre}
-                </p>
-                <p>
-                    <strong>Email:</strong> {userData.email}
-                </p>
-                <p>
-                    <strong>Miembro desde:</strong>{" "}
-                    {new Date(userData.createdAt).toLocaleDateString()}
-                </p>
-            </div> */}
-
-            {/* new design  */}
-
             <div className="min-h-screen bg-gradient-to-br from-blue-50 to-yellow-50 p-4">
                 <div className="max-w-4xl mx-auto space-y-6">
                     {/* Header del Perfil */}
@@ -239,16 +279,26 @@ export const Profile = () => {
                                         {userData.bio}
                                     </p>
                                 </div>
-
-                                {!isEditing && (
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => setIsEditing(true)}
-                                    >
-                                        <Settings className="w-4 h-4 mr-2" />
+                                <div className="space-y-4 flex justify-between gap-4">
+                                    <Button onClick={() => setIsEditing(true)}>
+                                        <Settings className="w-4 h-4" />
                                         Editar Perfil
                                     </Button>
-                                )}
+
+                                    {!Boolean(
+                                        session?.data?.user_company?.company
+                                    ) && (
+                                        <Button
+                                            variant="outline"
+                                            onClick={() =>
+                                                setShowStoreInfoModal(true)
+                                            }
+                                        >
+                                            <Settings className="w-4 h-4" />
+                                            Tienda
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
@@ -415,7 +465,7 @@ export const Profile = () => {
                     )}
 
                     {/* Estadísticas */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {stats.map((stat, index) => (
                             <Card key={index}>
                                 <CardContent className="pt-6">
@@ -435,7 +485,7 @@ export const Profile = () => {
                                 </CardContent>
                             </Card>
                         ))}
-                    </div>
+                    </div> */}
 
                     {/* Información Detallada */}
                     <div className="grid md:grid-cols-2 gap-6">
@@ -543,73 +593,162 @@ export const Profile = () => {
                                 </div>
                             </CardContent>
                         </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Información de la tienda</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">
+                                        Nombre
+                                    </span>
+                                    <span className="font-medium">
+                                        {companyData?.name}
+                                    </span>
+                                </div>
+                                <Separator />
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">
+                                        Email
+                                    </span>
+                                    <span className="font-medium">
+                                        {companyData?.email}
+                                    </span>
+                                </div>
+                                <Separator />
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">
+                                        Moneda
+                                    </span>
+                                    <Badge>{companyData?.coin_name}</Badge>
+                                </div>
+                                <Separator />
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">
+                                        Dirección
+                                    </span>
+                                    <span className="font-medium">
+                                        {companyData?.address}
+                                    </span>
+                                </div>
+                            </CardContent>
+                            <CardFooter>
+                                <Button
+                                    onClick={() =>
+                                        setShowEditCompanyModal(true)
+                                    }
+                                >
+                                    Editar
+                                </Button>
+                            </CardFooter>
+                        </Card>
                     </div>
-
-                    {/* Actividad Reciente */}
-                    {/* <Card>
-                        <CardHeader>
-                            <CardTitle>Actividad Reciente</CardTitle>
-                            <CardDescription>
-                                Tus últimas partidas y torneos
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                                    <div className="flex items-center gap-3">
-                                        <Trophy className="w-5 h-5 text-yellow-600" />
-                                        <div>
-                                            <p className="font-medium">
-                                                Torneo Semanal #47
-                                            </p>
-                                            <p className="text-sm text-muted-foreground">
-                                                Posición: 3er lugar
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <span className="text-sm text-muted-foreground">
-                                        Hace 2 días
-                                    </span>
-                                </div>
-
-                                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                                    <div className="flex items-center gap-3">
-                                        <Target className="w-5 h-5 text-green-600" />
-                                        <div>
-                                            <p className="font-medium">
-                                                Partida Clasificatoria
-                                            </p>
-                                            <p className="text-sm text-muted-foreground">
-                                                Victoria contra Alex_Trainer
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <span className="text-sm text-muted-foreground">
-                                        Hace 5 días
-                                    </span>
-                                </div>
-
-                                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                                    <div className="flex items-center gap-3">
-                                        <Award className="w-5 h-5 text-blue-600" />
-                                        <div>
-                                            <p className="font-medium">
-                                                Logro Desbloqueado
-                                            </p>
-                                            <p className="text-sm text-muted-foreground">
-                                                Racha de 5 victorias
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <span className="text-sm text-muted-foreground">
-                                        Hace 1 semana
-                                    </span>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card> */}
                 </div>
             </div>
+
+            {/* Store Question Modal */}
+            <Dialog
+                open={showStoreQuestionModal}
+                onOpenChange={setShowStoreQuestionModal}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>¿Eres una tienda?</DialogTitle>
+                        <DialogDescription>
+                            Por favor, indícanos si eres una tienda.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="space-x-2">
+                        <Button onClick={handleStoreYes}>Sí</Button>
+                        <Button variant="outline" onClick={handleStoreNo}>
+                            No
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Store Info Modal */}
+            <Dialog
+                open={showStoreInfoModal}
+                onOpenChange={setShowStoreInfoModal}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            Registrar Información de la Tienda
+                        </DialogTitle>
+                        <CreateFormStore
+                            form_id={"create_store_form"}
+                            onSuccess={() => {
+                                setShowStoreInfoModal(false);
+                            }}
+                        />
+                    </DialogHeader>
+                    {/* Aquí puedes agregar el formulario para registrar la tienda */}
+                    <DialogFooter>
+                        <Button type="submit" form="create_store_form">
+                            Registrar
+                        </Button>
+                        <Button
+                            onClick={() => setShowStoreInfoModal(false)}
+                            variant="outline"
+                        >
+                            Cancelar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* No Store Modal */}
+            <Dialog open={showNoStoreModal} onOpenChange={setShowNoStoreModal}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>No eres una tienda</DialogTitle>
+                        <DialogDescription>
+                            ¿Quieres que no te mostremos este mensaje
+                            nuevamente?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="space-x-2">
+                        <Button onClick={handleDontShowAgain}>
+                            Sí, no mostrar más
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowNoStoreModal(false)}
+                        >
+                            Cancelar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* EDIT COMPANY MODAL */}
+
+            <Dialog
+                open={showEditCompanyModal}
+                onOpenChange={setShowEditCompanyModal}
+            >
+                <DialogTitle>Edit tienda</DialogTitle>
+                <DialogContent>
+                    <DialogHeader>Editar tienda</DialogHeader>
+                    <EditFormStore
+                        form_id="edit_store_form"
+                        onSuccess={() => {
+                            // hide dialog
+                            setShowEditCompanyModal(false);
+                        }}
+                        store={companyData}
+                    />
+
+                    <DialogFooter>
+                        <Button form="edit_store_form" type="submit">
+                            Guardar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 };

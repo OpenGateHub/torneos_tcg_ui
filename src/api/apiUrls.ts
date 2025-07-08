@@ -12,5 +12,9 @@ export const apiUrls = {
         base: '/leagues',
         mutation: (id: number) => `/leagues/${id}`,
         details: (id: number) => `/leagues/${id}`
+    },
+    store: {
+        base: '/companies',
+        mutation: (id: number) => `/companies/${id}`,
     }
 }

@@ -332,7 +332,7 @@ export const Profile = () => {
                     )}
 
                     {/* Estadísticas */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {stats.map((stat, index) => (
                             <Card key={index}>
                                 <CardContent className="pt-6">
@@ -352,7 +352,7 @@ export const Profile = () => {
                                 </CardContent>
                             </Card>
                         ))}
-                    </div>
+                    </div> */}
 
                     {/* Información Detallada */}
                     <div className="grid md:grid-cols-2 gap-6">
