@@ -1,12 +1,5 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
-import {
-    ArrowLeft,
-    Trophy,
-    TrendingUp,
-    TrendingDown,
-    Minus,
-} from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -26,17 +19,54 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useQuery } from "@tanstack/react-query";
+import { QueryKeys } from "@/api/queryKeys";
+import axiosClient from "@/services/axios";
+import { apiUrls } from "@/api/apiUrls";
+import { LeagueType } from "@/types/league.types";
+
+type RankingLeagueType = {
+    byes: number;
+    derrotas: number;
+    empates: number;
+    jugadorId: number;
+    nombre: string;
+    porcentajeVictorias: string;
+    puntaje: number;
+    total: number;
+    victorias: number;
+};
+
+type RankingResponse = {
+    results: RankingLeagueType[];
+};
 
 export function LeagueTablePage() {
     // Datos de ejemplo de la liga
 
     const { id } = useParams<{ id: string }>();
-    const leagueData = {
-        id: id,
-        name: "Liga Profesional Pokémon",
-        season: "2025-1",
-        status: "active",
-    };
+    const navigate = useNavigate();
+    const league = useQuery({
+        queryFn: async () => {
+            const { data } = await axiosClient.get<LeagueType>(
+                apiUrls.leagues.details(Number(id))
+            );
+            console.log(data);
+            return data;
+        },
+        queryKey: [QueryKeys.LEAGUE_DETAILS, id],
+    });
+
+    const leagueRanking = useQuery({
+        queryFn: async () => {
+            const { data } = await axiosClient.get<RankingResponse>(
+                apiUrls.leagues.ranking(Number(id))
+            );
+            console.log(data);
+            return data;
+        },
+        queryKey: [QueryKeys.LEAGUE_RANKING, id],
+    });
 
     // Datos de ejemplo de la tabla de posiciones
     const standings = [
@@ -214,6 +244,10 @@ export function LeagueTablePage() {
         );
     };
 
+    const handleGoToLeague = () => {
+        navigate(`/admin/ligas/detalles/${id}/`);
+    };
+
     return (
         <div className="flex flex-1 flex-col gap-4 p-4">
             <div className="max-w-7xl mx-auto w-full space-y-6">
@@ -223,18 +257,17 @@ export function LeagueTablePage() {
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => window.history.back()}
+                            onClick={handleGoToLeague}
                         >
                             <ArrowLeft className="w-4 h-4 mr-2" />
                             Volver
                         </Button>
                         <div>
                             <h1 className="text-3xl font-bold">
-                                {leagueData.name}
+                                {league?.data?.name}
                             </h1>
                             <p className="text-muted-foreground">
-                                Tabla de Posiciones - Temporada{" "}
-                                {leagueData.season}
+                                Tabla de Posiciones
                             </p>
                         </div>
                     </div>
@@ -242,72 +275,6 @@ export function LeagueTablePage() {
                         Liga Activa
                     </Badge>
                 </div>
-
-                {/* Estadísticas Rápidas */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-gradient-to-r from-yellow-100 to-orange-100 rounded-lg">
-                                    <Trophy className="w-5 h-5 text-yellow-600" />
-                                </div>
-                                <div>
-                                    <div className="text-2xl font-bold">
-                                        {standings[0].team}
-                                    </div>
-                                    <div className="text-sm text-muted-foreground">
-                                        Líder
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="text-2xl font-bold">
-                                {standings.reduce(
-                                    (sum, team) => sum + team.played,
-                                    0
-                                )}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                                Partidos Jugados
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="text-2xl font-bold">
-                                {standings.reduce(
-                                    (sum, team) => sum + team.goalsFor,
-                                    0
-                                )}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                                Goles Total
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="text-2xl font-bold">
-                                {Math.round(
-                                    standings.reduce(
-                                        (sum, team) => sum + team.goalsFor,
-                                        0
-                                    ) / standings.length
-                                )}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                                Promedio por Equipo
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
                 {/* Tabla de Posiciones */}
                 <Card>
                     <CardHeader>
@@ -316,100 +283,89 @@ export function LeagueTablePage() {
                             Clasificación actual de la liga
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-12">
-                                            Pos
-                                        </TableHead>
-                                        <TableHead>Equipo</TableHead>
-                                        <TableHead className="text-center">
-                                            PJ
-                                        </TableHead>
-                                        <TableHead className="text-center">
-                                            PG
-                                        </TableHead>
-                                        <TableHead className="text-center">
-                                            PP
-                                        </TableHead>
-                                        <TableHead className="text-center">
-                                            GF
-                                        </TableHead>
-                                        <TableHead className="text-center">
-                                            GC
-                                        </TableHead>
-                                        <TableHead className="text-center">
-                                            DG
-                                        </TableHead>
-                                        <TableHead className="text-center">
-                                            Pts
-                                        </TableHead>
-                                        <TableHead className="text-center">
+                    {leagueRanking.isLoading ? (
+                        "..."
+                    ) : (
+                        <CardContent>
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-12">
+                                                Pos
+                                            </TableHead>
+                                            <TableHead className="text-center">
+                                                Jugador
+                                            </TableHead>
+                                            <TableHead className="text-center">
+                                                Victorias
+                                            </TableHead>
+                                            <TableHead className="text-center">
+                                                Derrotas
+                                            </TableHead>
+                                            <TableHead className="text-center">
+                                                Empates
+                                            </TableHead>
+                                            <TableHead className="text-center">
+                                                Byes
+                                            </TableHead>
+                                            <TableHead className="text-center">
+                                                Promedio de victorias
+                                            </TableHead>
+                                            <TableHead className="text-center">
+                                                Puntos
+                                            </TableHead>
+                                            {/* <TableHead className="text-center">
                                             Forma
-                                        </TableHead>
-                                        <TableHead className="w-12"></TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {standings.map((team) => (
-                                        <TableRow
-                                            key={team.position}
-                                            className="hover:bg-muted/50"
-                                        >
-                                            <TableCell>
-                                                <div
-                                                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${getPositionColor(
-                                                        team.position
-                                                    )}`}
+                                        </TableHead> */}
+                                            <TableHead className="w-12"></TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {leagueRanking.data.results.map(
+                                            (item, index) => (
+                                                <TableRow
+                                                    key={item.jugadorId}
+                                                    className="hover:bg-muted/50"
                                                 >
-                                                    {team.position}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-3">
-                                                    <Avatar className="w-8 h-8">
-                                                        <AvatarFallback className="text-xs font-bold">
-                                                            {team.logo}
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                    <span className="font-medium">
-                                                        {team.team}
-                                                    </span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                {team.played}
-                                            </TableCell>
-                                            <TableCell className="text-center text-green-600 font-medium">
-                                                {team.won}
-                                            </TableCell>
-                                            <TableCell className="text-center text-red-600 font-medium">
-                                                {team.lost}
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                {team.goalsFor}
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                {team.goalsAgainst}
-                                            </TableCell>
-                                            <TableCell
-                                                className={`text-center font-medium ${
-                                                    team.goalDifference >= 0
-                                                        ? "text-green-600"
-                                                        : "text-red-600"
-                                                }`}
-                                            >
-                                                {team.goalDifference > 0
-                                                    ? "+"
-                                                    : ""}
-                                                {team.goalDifference}
-                                            </TableCell>
-                                            <TableCell className="text-center font-bold">
-                                                {team.points}
-                                            </TableCell>
-                                            <TableCell>
+                                                    <TableCell>
+                                                        <div
+                                                            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${getPositionColor(
+                                                                index + 1
+                                                            )}`}
+                                                        >
+                                                            {index + 1}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="font-medium">
+                                                                {item.nombre}
+                                                            </span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="text-center text-green-600 font-medium">
+                                                        {item.victorias}
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        {item.empates}
+                                                    </TableCell>
+                                                    <TableCell className="text-center text-red-600 font-medium">
+                                                        {item.derrotas}
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        {item.byes}
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        {
+                                                            item.porcentajeVictorias
+                                                        }
+                                                    </TableCell>
+
+                                                    <TableCell className="text-center font-bold">
+                                                        {item.puntaje}
+                                                    </TableCell>
+                                                    {/* <TableCell>
                                                 <div className="flex items-center gap-1 justify-center">
                                                     {team.form.map(
                                                         (result, index) => (
@@ -421,38 +377,18 @@ export function LeagueTablePage() {
                                                         )
                                                     )}
                                                 </div>
-                                            </TableCell>
-                                            <TableCell className="text-center">
+                                            </TableCell> */}
+                                                    {/* <TableCell className="text-center">
                                                 {getTrendIcon(team.trend)}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-
-                        {/* Leyenda */}
-                        <div className="mt-6 flex flex-wrap gap-4 text-sm">
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 rounded-full bg-green-50 border border-green-200"></div>
-                                <span>
-                                    Posiciones 1-3: Clasificación directa
-                                </span>
+                                            </TableCell> */}
+                                                </TableRow>
+                                            )
+                                        )}
+                                    </TableBody>
+                                </Table>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 rounded-full bg-blue-50 border border-blue-200"></div>
-                                <span>Posiciones 4-6: Playoff</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 rounded-full bg-orange-50 border border-orange-200"></div>
-                                <span>Posiciones 7-8: Zona media</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 rounded-full bg-red-50 border border-red-200"></div>
-                                <span>Posiciones 9-10: Zona de descenso</span>
-                            </div>
-                        </div>
-                    </CardContent>
+                        </CardContent>
+                    )}
                 </Card>
             </div>
         </div>

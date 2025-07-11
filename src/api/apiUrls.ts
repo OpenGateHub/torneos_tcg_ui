@@ -11,7 +11,8 @@ export const apiUrls = {
     leagues: {
         base: '/leagues',
         mutation: (id: number) => `/leagues/${id}`,
-        details: (id: number) => `/leagues/${id}`
+        details: (id: number) => `/leagues/${id}`,
+        ranking: (id: number) => `/leagues/${id}/table`
     },
     store: {
         base: '/companies',
