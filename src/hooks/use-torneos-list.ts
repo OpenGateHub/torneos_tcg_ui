@@ -12,7 +12,13 @@ interface UseTorneosListParams {
 }
 
 const fetchTorneos = async ({ page = 1, limit = 10, leagueId }: UseTorneosListParams) => {
-  const { data } = await axiosClient.get<TorneosResponse>(`${apiUrls.tournaments.base}/?page=${page}&limit=${limit}&league=${leagueId}`);
+  const { data } = await axiosClient.get<TorneosResponse>(`${apiUrls.tournaments.base}`, {
+    params: {
+      page,
+      limit,
+      ...( Boolean(leagueId) ? { leagueId } : {})
+    }
+  });
   return data;
 };
 
@@ -22,7 +28,7 @@ export const useTorneosList = (params: UseTorneosListParams = {}) => {
     queryKey: [QueryKeys.TOURNAMENTS_LIST],
     queryFn: () => fetchTorneos({
       ...params,
-      leagueId: Number(id)
+      ...( Boolean(id) ? { leagueId: Number(id) } : {})
     }),
     keepPreviousData: true, // Mantiene los datos anteriores mientras se cargan los nuevos
     staleTime: 5 * 60 * 1000, // Considera los datos frescos por 5 minutos

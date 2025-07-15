@@ -25,12 +25,17 @@ import { TorneosPage } from "@/pages/admin/torneos";
 import { LeagueDetailPage } from "./pages/admin/leagues-details";
 import { LeagueTablePage } from "./pages/admin/leagues-position-table";
 import { StorePage } from "./pages/store";
+import { RankingGeneral } from "./pages/ranking_general";
 export const AppRouter = () => {
     return (
         <>
             <Routes>
                 <Route path="/" element={<Layout />}>
                     <Route index element={<Home />} />
+                    <Route
+                        path="tabla"
+                        element={<RankingGeneral/>}
+                    />
                     {/**Torneos */}
                     <Route path="/torneos" element={<Torneos />} />
                     <Route path="/torneos/:id" element={<Torneo />} />
