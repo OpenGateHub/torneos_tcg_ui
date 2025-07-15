@@ -1,4 +1,7 @@
 export const apiUrls = {
+    general:{
+        public_ranking:'/general-ranking'
+    },
     tournaments: {
         base: '/tournaments',
     },

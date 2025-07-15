@@ -75,7 +75,7 @@ export const AppRouter = () => {
                         element={<LeagueDetailPage />}
                     />
                     <Route
-                        path="ligas/:id/tabla"
+                        path="ligas/:id/1"
                         element={<LeagueTablePage />}
                     />
 

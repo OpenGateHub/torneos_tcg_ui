@@ -35,7 +35,7 @@ const Navbar = () => {
                                     Torneos
                                 </Link>
                                 <Link
-                                    to="/tabla-general"
+                                    to="/tabla"
                                     onClick={() => setOpen(false)}
                                 >
                                     Tabla general
@@ -98,7 +98,7 @@ const Navbar = () => {
                     >
                         Torneos
                     </Link>
-                    <Link to="/tabla-general" className="text-sm text-gray-700 hover:text-gray-900">Tabla general</Link>
+                    <Link to="/tabla" className="text-sm text-gray-700 hover:text-gray-900">Tabla general</Link>
                     {auth?.rol === "admin" && (
                         <Link
                             to="/admin"
