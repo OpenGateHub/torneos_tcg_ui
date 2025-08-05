@@ -13,6 +13,7 @@ import {
     Target,
     Award,
     Settings,
+    Store,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -187,8 +188,20 @@ export const Profile = () => {
     }, [navigate]);
 
     useEffect(() => {
-        if (!session.isLoading) {
-            setCompanyData(session.data.user_company.Company);
+        try {
+            if (!session.isLoading && session?.data?.user_company?.Company) {
+                setCompanyData(session.data.user_company.Company);
+            }
+        } catch (error) {
+            console.error("Error al cargar datos de company:", error);
+            // Reseteamos companyData a un estado seguro
+            setCompanyData({
+                name: "",
+                email: "",
+                address: "",
+                phone: "",
+                coin_name: ""
+            });
         }
     }, [session.data]);
 
@@ -599,49 +612,68 @@ export const Profile = () => {
                                 <CardTitle>Información de la tienda</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground">
-                                        Nombre
-                                    </span>
-                                    <span className="font-medium">
-                                        {companyData?.name}
-                                    </span>
-                                </div>
-                                <Separator />
-                                <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground">
-                                        Email
-                                    </span>
-                                    <span className="font-medium">
-                                        {companyData?.email}
-                                    </span>
-                                </div>
-                                <Separator />
-                                <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground">
-                                        Moneda
-                                    </span>
-                                    <Badge>{companyData?.coin_name}</Badge>
-                                </div>
-                                <Separator />
-                                <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground">
-                                        Dirección
-                                    </span>
-                                    <span className="font-medium">
-                                        {companyData?.address}
-                                    </span>
-                                </div>
+                                {companyData?.name ? (
+                                    <>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-muted-foreground">
+                                                Nombre
+                                            </span>
+                                            <span className="font-medium">
+                                                {companyData?.name}
+                                            </span>
+                                        </div>
+                                        <Separator />
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-muted-foreground">
+                                                Email
+                                            </span>
+                                            <span className="font-medium">
+                                                {companyData?.email}
+                                            </span>
+                                        </div>
+                                        <Separator />
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-muted-foreground">
+                                                Moneda
+                                            </span>
+                                            <Badge>{companyData?.coin_name}</Badge>
+                                        </div>
+                                        <Separator />
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-muted-foreground">
+                                                Dirección
+                                            </span>
+                                            <span className="font-medium">
+                                                {companyData?.address}
+                                            </span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="text-center py-8 text-muted-foreground">
+                                        <div className="mb-4">
+                                            <Store className="h-12 w-12 mx-auto text-gray-300" />
+                                        </div>
+                                        <p className="text-lg font-medium mb-2">No hay tienda asociada</p>
+                                        <p className="text-sm">
+                                            {session?.data?.user_company?.company 
+                                                ? "Los datos de la tienda no están disponibles en este momento."
+                                                : "Aún no tienes una tienda asociada a tu cuenta."
+                                            }
+                                        </p>
+                                    </div>
+                                )}
                             </CardContent>
-                            <CardFooter>
-                                <Button
-                                    onClick={() =>
-                                        setShowEditCompanyModal(true)
-                                    }
-                                >
-                                    Editar
-                                </Button>
-                            </CardFooter>
+                            {companyData?.name && (
+                                <CardFooter>
+                                    <Button
+                                        onClick={() =>
+                                            setShowEditCompanyModal(true)
+                                        }
+                                    >
+                                        Editar
+                                    </Button>
+                                </CardFooter>
+                            )}
                         </Card>
                     </div>
                 </div>
