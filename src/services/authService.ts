@@ -1,11 +1,12 @@
 import clienteAxios from "./axios";
 import Cookies from "js-cookie";
+import type { RegisterRequest, LoginRequest } from "@/types/auth.types";
 
-export const registrarUsuario = async (datos) => {
+export const registrarUsuario = async (datos: RegisterRequest) => {
     await clienteAxios.post("/crear-cuenta", datos);
 };
 
-export const loginUsuario = async (datos) => {
+export const loginUsuario = async (datos: LoginRequest) => {
     const response = await clienteAxios.post("/login", datos);
     const { token, usuario } = response.data;
 
@@ -15,11 +16,11 @@ export const loginUsuario = async (datos) => {
     return { token, usuario };
 };
 
-export const confirmarCuenta = async (token) => {
+export const confirmarCuenta = async (token: string) => {
     try {
         const response = await clienteAxios.get(`/confirmar-cuenta/${token}`);
         return response.data;
-    } catch (error) {
+    } catch (error: any) {
         return {
             ok: false,
             mensaje:
@@ -29,7 +30,7 @@ export const confirmarCuenta = async (token) => {
     }
 };
 
-export const solicitarTokenRecuperacion = async (data) => {
+export const solicitarTokenRecuperacion = async (data: { email: string }) => {
     try {
         const response = await clienteAxios.post(`/recuperar-password`, data);
         return response.data;
@@ -39,14 +40,14 @@ export const solicitarTokenRecuperacion = async (data) => {
     }
 };
 
-export const reestablecerPassword = async (token, nuevaPassword) => {
+export const reestablecerPassword = async (token: string, nuevaPassword: string) => {
     const response = await clienteAxios.put(`/restablecer-password/${token}`, {
         nuevaPassword,
     });
     return response.data; // Devuelve la respuesta del backend
 };
 
-export const obtenerPerfil = async (token) => {
+export const obtenerPerfil = async (token: string) => {
     const response = await clienteAxios.get("/perfil", {
         headers: {
             Authorization: `Bearer ${token}`,
