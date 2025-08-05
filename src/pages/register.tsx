@@ -1,7 +1,7 @@
 import type React from "react";
 
 import { useState } from "react";
-import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -15,13 +15,15 @@ import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
 import { registrarUsuario } from "@/services/authService";
 import { toast } from "react-toastify";
+import type { RegisterFormData } from "@/types/auth.types";
 
 export function RegisterPage() {
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<RegisterFormData>({
         name: "",
         email: "",
         password: "",
         confirmPassword: "",
+        companyName: "",
     });
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -55,6 +57,10 @@ export function RegisterPage() {
             newErrors.confirmPassword = "Las contraseñas no coinciden";
         }
 
+        if (!formData.companyName.trim()) {
+            newErrors.companyName = "El nombre de la tienda es requerido";
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -71,7 +77,8 @@ export function RegisterPage() {
             await registrarUsuario({
                 nombre: formData.name,
                 email: formData.email,
-                password: formData.password
+                password: formData.password,
+                companyName: formData.companyName
             });
             toast.success("Confirma tu cuenta al correo que suministraste.");
             navigate("/login");
@@ -128,6 +135,28 @@ export function RegisterPage() {
                         {errors.name && (
                             <p className="text-sm text-red-600">
                                 {errors.name}
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="companyName">Nombre de la tienda</Label>
+                        <div className="relative">
+                            <Building2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                id="companyName"
+                                name="companyName"
+                                type="text"
+                                placeholder="Nombre de tu tienda"
+                                value={formData.companyName}
+                                onChange={handleChange}
+                                className="pl-10"
+                                required
+                            />
+                        </div>
+                        {errors.companyName && (
+                            <p className="text-sm text-red-600">
+                                {errors.companyName}
                             </p>
                         )}
                     </div>
